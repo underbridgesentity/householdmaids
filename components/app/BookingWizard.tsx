@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { computePrice, type Recurrence } from "@/lib/pricing";
 import { formatZar } from "@/lib/money";
+import { servicePhoto } from "@/lib/service-photos";
 import { createBookingAction } from "@/app/actions/booking";
 
 type Service = { id: string; name: string; emoji: string; tint: string; description: string; mode: "ROOMS" | "HOURS"; basePrice: number; hourlyRate: number; minHours: number };
@@ -101,7 +103,9 @@ export function BookingWizard({
                 onClick={() => { setServiceId(s.id); setHours(Math.max(3, s.minHours)); setStep(1); }}
                 className={`flex items-center gap-3.5 rounded-[18px] border-[1.5px] bg-white p-3.5 text-left shadow-card ${s.id === serviceId ? "border-magenta-brand" : "border-line"}`}
               >
-                <div className="flex h-[54px] w-[54px] items-center justify-center rounded-[15px] text-[26px]" style={{ background: s.tint }}>{s.emoji}</div>
+                <div className="relative h-[54px] w-[54px] flex-shrink-0 overflow-hidden rounded-[15px]">
+                  <Image src={servicePhoto(s.name)} alt={s.name} fill sizes="54px" className="object-cover" />
+                </div>
                 <div className="flex-1">
                   <div className="font-display text-[15.5px] font-bold">{s.name}</div>
                   <div className="mt-0.5 text-[12.5px] text-muted">{s.description}</div>

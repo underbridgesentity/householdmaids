@@ -1,10 +1,12 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
 import { getWallet } from "@/lib/wallet";
 import { getSettings } from "@/lib/settings";
 import { fromPriceCents } from "@/lib/pricing";
 import { formatZar } from "@/lib/money";
+import { servicePhoto } from "@/lib/service-photos";
 import { AppShell } from "@/components/app/AppShell";
 
 export const dynamic = "force-dynamic";
@@ -90,10 +92,15 @@ export default async function HomePage() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           {services.map((s) => (
-            <Link key={s.id} href={`/app/book?service=${s.id}`} className="card p-4 shadow-card">
-              <div className="mb-2.5 flex h-[46px] w-[46px] items-center justify-center rounded-[13px] text-[23px]" style={{ background: s.tint }}>{s.emoji}</div>
-              <div className="font-display text-[14.5px] font-bold">{s.name}</div>
-              <div className="mt-0.5 text-[12.5px] text-muted">from {formatZar(fromPriceCents(s, settings))}</div>
+            <Link key={s.id} href={`/app/book?service=${s.id}`} className="overflow-hidden rounded-[18px] border border-line bg-white shadow-card">
+              <div className="relative h-24 w-full">
+                <Image src={servicePhoto(s.name)} alt={s.name} fill sizes="220px" className="object-cover" />
+                <div className="absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-[11px] text-lg shadow" style={{ background: s.tint }}>{s.emoji}</div>
+              </div>
+              <div className="p-3">
+                <div className="font-display text-[14.5px] font-bold">{s.name}</div>
+                <div className="mt-0.5 text-[12.5px] text-muted">from {formatZar(fromPriceCents(s, settings))}</div>
+              </div>
             </Link>
           ))}
         </div>

@@ -1,9 +1,12 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { fromPriceCents } from "@/lib/pricing";
 import { formatZar } from "@/lib/money";
+import { servicePhoto } from "@/lib/service-photos";
 import { Logo } from "@/components/ui/Logo";
+import { MarketingNav } from "@/components/marketing/MarketingNav";
 
 export const dynamic = "force-dynamic";
 
@@ -18,38 +21,8 @@ export default async function LandingPage() {
 
   return (
     <div className="bg-white text-ink">
-      {/* Nav — floating glass pill */}
-      <header className="sticky top-3 z-40 px-3 md:top-4 md:px-5">
-        <div className="glass-pill mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-2 pl-4 md:px-4 md:py-2.5 md:pl-6">
-          <Logo height={48} />
-          <nav className="hidden items-center gap-7 lg:flex">
-            {[["Services", "#services"], ["How it works", "#how"], ["Refer & earn", "#refer"], ["Contact", "#contact"]].map(
-              ([label, href]) => (
-                <a key={label} href={href} className="text-sm font-semibold text-[#4a4463] transition hover:text-magenta-brand">
-                  {label}
-                </a>
-              ),
-            )}
-            <Link href="/helper" className="text-sm font-semibold text-[#4a4463] transition hover:text-magenta-brand">
-              Become a helper
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="rounded-full px-4 py-2.5 font-display text-sm font-bold text-indigo-brand transition hover:bg-white/70"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-full bg-orange-brand px-5 py-2.5 font-display text-sm font-extrabold text-[#2A1A40] shadow-[0_10px_22px_-10px_rgba(242,150,14,.7)] transition hover:brightness-105"
-            >
-              Book a service
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Nav — floating glass pill with a mobile hamburger menu */}
+      <MarketingNav />
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-hero-gradient">
@@ -83,12 +56,16 @@ export default async function LandingPage() {
               <span>⭐ 4.9 rating</span>
               <span>🔒 Secure payments</span>
             </div>
+            {/* Mobile hero image (desktop uses the framed column on the right) */}
+            <div className="relative mt-7 h-56 w-full overflow-hidden rounded-3xl shadow-2xl md:hidden">
+              <Image src="/photos/hero.jpg" alt="A friendly Household Maids cleaner" fill sizes="100vw" className="object-cover" priority />
+            </div>
           </div>
           <div className="relative hidden min-h-[440px] md:block">
             <div className="absolute right-2.5 top-20 h-[150px] w-[88px] rounded-l-none rounded-r-[90px] bg-orange-brand opacity-90" />
             <div className="absolute right-12 top-20 h-[150px] w-[88px] rounded-r-[90px] bg-orange-brand opacity-50" />
-            <div className="relative z-10 mx-auto mt-6 flex h-[400px] w-[330px] max-w-full items-center justify-center rounded-[180px] bg-gradient-to-br from-white/15 to-white/5 text-7xl">
-              🧼
+            <div className="relative z-10 mx-auto mt-6 h-[400px] w-[330px] max-w-full overflow-hidden rounded-[180px] shadow-[0_30px_60px_-20px_rgba(0,0,0,.5)]">
+              <Image src="/photos/hero.jpg" alt="A friendly Household Maids cleaner" fill priority sizes="330px" className="object-cover" />
             </div>
             <div className="glass absolute bottom-3.5 left-0 z-20 flex items-center gap-3 rounded-2xl px-4 py-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fdf0dc] text-lg">💸</div>
@@ -121,13 +98,18 @@ export default async function LandingPage() {
         </div>
         <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((s) => (
-            <div key={s.id} className="rounded-[18px] border border-line bg-white p-5 shadow-card">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[15px] text-[27px]" style={{ background: s.tint }}>{s.emoji}</div>
-              <div className="font-display text-lg font-bold">{s.name}</div>
-              <div className="my-1.5 text-[13.5px] leading-relaxed text-muted">{s.description}</div>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="font-display text-[15px] font-bold text-magenta-brand">from {formatZar(fromPriceCents(s, settings))}</span>
-                <Link href="/signup" className="text-[13.5px] font-bold text-indigo-brand">Book ›</Link>
+            <div key={s.id} className="overflow-hidden rounded-[18px] border border-line bg-white shadow-card">
+              <div className="relative h-40 w-full">
+                <Image src={servicePhoto(s.name)} alt={s.name} fill sizes="(max-width:640px) 100vw, 380px" className="object-cover" />
+                <div className="absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-[13px] text-2xl shadow-md" style={{ background: s.tint }}>{s.emoji}</div>
+              </div>
+              <div className="p-5">
+                <div className="font-display text-lg font-bold">{s.name}</div>
+                <div className="my-1.5 text-[13.5px] leading-relaxed text-muted">{s.description}</div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="font-display text-[15px] font-bold text-magenta-brand">from {formatZar(fromPriceCents(s, settings))}</span>
+                  <Link href="/signup" className="text-[13.5px] font-bold text-indigo-brand">Book ›</Link>
+                </div>
               </div>
             </div>
           ))}
@@ -210,13 +192,20 @@ export default async function LandingPage() {
       </section>
 
       {/* Helper band */}
-      <section className="bg-[#faf7fc] px-6 py-12 text-center md:px-9">
-        <div className="mb-3 text-[34px]">🧽</div>
-        <h2 className="mb-2.5 font-display text-[30px] font-extrabold tracking-tight">Earn a steady income as a cleaner</h2>
-        <p className="mx-auto mb-5 max-w-xl text-base leading-relaxed text-[#5f5878]">
-          Join our vetted team across Gauteng. Choose your areas, set your schedule, and get paid every Friday.
-        </p>
-        <Link href="/helper" className="inline-block rounded-xl bg-brand-gradient px-7 py-3.5 font-display font-bold text-white">Apply to become a helper</Link>
+      <section className="bg-[#faf7fc] px-6 py-12 md:px-9">
+        <div className="mx-auto grid max-w-5xl items-center gap-8 md:grid-cols-2">
+          <div className="relative order-2 h-64 w-full overflow-hidden rounded-3xl shadow-card md:order-1 md:h-80">
+            <Image src="/photos/helper.jpg" alt="A Household Maids cleaner celebrating" fill sizes="(max-width:768px) 100vw, 480px" className="object-cover" />
+          </div>
+          <div className="order-1 text-center md:order-2 md:text-left">
+            <div className="mb-3 text-[34px]">🧽</div>
+            <h2 className="mb-2.5 font-display text-[30px] font-extrabold tracking-tight">Earn a steady income as a cleaner</h2>
+            <p className="mb-5 max-w-xl text-base leading-relaxed text-[#5f5878]">
+              Join our vetted team across Gauteng. Choose your areas, set your schedule, and get paid every Friday.
+            </p>
+            <Link href="/helper" className="inline-block rounded-xl bg-brand-gradient px-7 py-3.5 font-display font-bold text-white">Apply to become a helper</Link>
+          </div>
+        </div>
       </section>
 
       {/* Testimonials */}

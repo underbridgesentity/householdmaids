@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AppShell } from "@/components/app/AppShell";
 
 export default function HelperIntroPage() {
@@ -16,7 +17,9 @@ export default function HelperIntroPage() {
         </div>
 
         <div className="flex flex-1 flex-col px-[18px] pb-[18px] pt-6">
-          <div className="text-[64px] leading-none">🧽</div>
+          <div className="relative h-44 w-full overflow-hidden rounded-3xl shadow-2xl">
+            <Image src="/photos/helper.jpg" alt="A happy Household Maids cleaner" fill sizes="100vw" className="object-cover" priority />
+          </div>
           <h1 className="mt-5 font-display text-[30px] font-extrabold leading-[1.08] tracking-tight">
             Earn a steady income with Household Maids
           </h1>
