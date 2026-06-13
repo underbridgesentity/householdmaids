@@ -1,4 +1,5 @@
 import { promises as fs } from "fs";
+import os from "os";
 import path from "path";
 import crypto from "crypto";
 import { encryptBytes, decryptBytes } from "@/lib/crypto";
@@ -13,7 +14,12 @@ import { encryptBytes, decryptBytes } from "@/lib/crypto";
  *  - Otherwise → a private local dir under ./storage (dev; outside /public).
  */
 
-const STORAGE_ROOT = path.join(process.cwd(), "storage", "helper-docs");
+// On Vercel the project filesystem is read-only, so the local fallback must use
+// a writable temp dir. NOTE: temp storage is EPHEMERAL on serverless — configure
+// BLOB_READ_WRITE_TOKEN (Vercel Blob) in production for durable document storage.
+const STORAGE_ROOT = process.env.VERCEL
+  ? path.join(os.tmpdir(), "hhm-helper-docs")
+  : path.join(process.cwd(), "storage", "helper-docs");
 const useBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
 
 export interface StoredFile {
