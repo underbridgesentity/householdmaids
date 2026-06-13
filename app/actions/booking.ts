@@ -3,17 +3,29 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { assertRole } from "@/lib/rbac";
+import { signIn } from "@/auth";
+import { assertRole, getSessionUser } from "@/lib/rbac";
+import { hashPassword, verifyPassword } from "@/lib/password";
 import { bookingSchema, reviewSchema, messageSchema } from "@/lib/validation";
 import { computePrice } from "@/lib/pricing";
 import { getSettings } from "@/lib/settings";
-import { bookingReference } from "@/lib/reference";
+import { bookingReference, referralCodeFor } from "@/lib/reference";
 import { markBookingPaid, advanceBooking } from "@/lib/booking";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
 
 export type BookingState = { error?: string } | undefined;
+
+// Account fields collected at the end of a guest booking.
+const guestAccountSchema = z.object({
+  fullName: z.string().min(2).max(80),
+  email: z.string().email().max(120),
+  phone: z.string().max(20).optional().or(z.literal("")),
+  password: z.string().min(8, "Use at least 8 characters").max(100),
+  referralCode: z.string().max(32).optional().or(z.literal("")),
+});
 
 export async function advanceStatusAction(reference: string): Promise<void> {
   // The booking's customer (demo control) or its assigned helper may advance it.
@@ -28,56 +40,92 @@ export async function advanceStatusAction(reference: string): Promise<void> {
 }
 
 /**
- * Creates a booking. The server is the single source of truth for price —
- * it recomputes the total from trusted DB rates and ignores any client total.
+ * Creates a booking. Works for both signed-in customers AND guests — a guest
+ * chooses everything first, then creates an account (or signs in) at the end.
+ * The server is the single source of truth for price.
  */
 export async function createBookingAction(formData: FormData): Promise<BookingState> {
-  const user = await assertRole("CUSTOMER");
   const ip = await clientIp();
-  if (!(await rateLimit(`booking:${user.id}:${ip}`, 30, 60 * 60 * 1000))) {
+  if (!(await rateLimit(`booking:${ip}`, 30, 60 * 60 * 1000))) {
     return { error: "Too many booking attempts. Please try again shortly." };
   }
 
-  const raw = {
+  const session = await getSessionUser();
+  const parsed = bookingSchema.safeParse({
     ...Object.fromEntries(formData),
     addonIds: formData.getAll("addonIds").map(String),
-  };
-  const parsed = bookingSchema.safeParse(raw);
+  });
   if (!parsed.success) return { error: "Please review your booking details and try again." };
   const input = parsed.data;
 
+  // ---- Resolve the customer (existing session, sign-in, or new account) ----
+  let customerId: string;
+  let signInCreds: { email: string; password: string } | null = null;
+
+  if (session?.role === "CUSTOMER") {
+    customerId = session.id;
+  } else {
+    const acct = guestAccountSchema.safeParse(Object.fromEntries(formData));
+    if (!acct.success) return { error: acct.error.issues[0]?.message ?? "Please complete your details." };
+    const { fullName, email, phone, password, referralCode } = acct.data;
+    const lower = email.toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: lower } });
+
+    if (existing) {
+      // Returning customer finishing checkout — verify their password to sign in.
+      if (existing.role !== "CUSTOMER" || !(await verifyPassword(existing.passwordHash, password))) {
+        return { error: "An account already exists for this email. Enter your correct password, or sign in first." };
+      }
+      customerId = existing.id;
+    } else {
+      const code = referralCode?.trim().toUpperCase();
+      const referrerCode = code
+        ? await prisma.referralCode.findUnique({ where: { code } })
+        : null;
+      const passwordHash = await hashPassword(password);
+      const created = await prisma.$transaction(async (tx) => {
+        const u = await tx.user.create({
+          data: {
+            fullName, email: lower, phone: phone || null, passwordHash, role: "CUSTOMER",
+            referralCode: { create: { code: referralCodeFor(fullName) } },
+          },
+        });
+        if (referrerCode && referrerCode.ownerId !== u.id) {
+          await tx.referral.create({ data: { codeId: referrerCode.id, referrerId: referrerCode.ownerId, refereeId: u.id, status: "PENDING" } });
+        }
+        return u;
+      });
+      customerId = created.id;
+    }
+    signInCreds = { email: lower, password };
+  }
+
+  // ---- Price (server-authoritative) ----
   const [service, addons, area, settings, priorBookings, pendingReferral] = await Promise.all([
     prisma.service.findUnique({ where: { id: input.serviceId } }),
     prisma.addon.findMany({ where: { id: { in: input.addonIds }, active: true } }),
     prisma.area.findUnique({ where: { id: input.areaId } }),
     getSettings(),
-    prisma.booking.count({ where: { customerId: user.id } }),
-    prisma.referral.findUnique({ where: { refereeId: user.id } }),
+    prisma.booking.count({ where: { customerId } }),
+    prisma.referral.findUnique({ where: { refereeId: customerId } }),
   ]);
   if (!service || !service.active) return { error: "That service is no longer available." };
   if (!area) return { error: "Please choose a valid service area." };
 
   const isFirstBooking = priorBookings === 0;
-  // Referral discount only on a genuine first booking with a pending referral.
-  const applyReferral =
-    input.applyReferral && isFirstBooking && !!pendingReferral && pendingReferral.status === "PENDING";
+  const applyReferral = isFirstBooking && !!pendingReferral && pendingReferral.status === "PENDING";
 
   const breakdown = computePrice({
-    service,
-    beds: input.beds,
-    baths: input.baths,
-    hours: input.hours,
-    addonCents: addons.map((a) => a.price),
-    recurrence: input.recurrence,
-    applyReferralDiscount: applyReferral,
-    settings,
+    service, beds: input.beds, baths: input.baths, hours: input.hours,
+    addonCents: addons.map((a) => a.price), recurrence: input.recurrence,
+    applyReferralDiscount: applyReferral, settings,
   });
 
   const reference = bookingReference();
   await prisma.booking.create({
     data: {
       reference,
-      customerId: user.id,
+      customerId,
       serviceId: service.id,
       areaId: area.id,
       addressText: input.addressText,
@@ -93,13 +141,16 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
       priceSnapshot: breakdown as unknown as Prisma.InputJsonValue,
       addons: { create: addons.map((a) => ({ addonId: a.id, priceCents: a.price })) },
       payment: { create: { amountCents: breakdown.totalCents } },
-      ...(applyReferral && pendingReferral
-        ? { referral: { connect: { id: pendingReferral.id } } }
-        : {}),
+      ...(applyReferral && pendingReferral ? { referral: { connect: { id: pendingReferral.id } } } : {}),
     },
   });
+  await audit({ actorId: customerId, action: "booking.created", entity: "Booking", entityId: reference, meta: { totalCents: breakdown.totalCents, guest: !!signInCreds } });
 
-  await audit({ actorId: user.id, action: "booking.created", entity: "Booking", entityId: reference, meta: { totalCents: breakdown.totalCents } });
+  // Guests are signed in on the way to payment; signed-in customers just go there.
+  if (signInCreds) {
+    await signIn("credentials", { ...signInCreds, redirectTo: `/app/pay/${reference}` });
+    return undefined; // signIn redirects
+  }
   redirect(`/app/pay/${reference}`);
 }
 

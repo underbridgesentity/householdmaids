@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 export async function GET(req: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   const clean = (code ?? "").replace(/[^A-Za-z0-9-]/g, "").slice(0, 32);
-  const url = new URL("/signup", req.url);
+  const url = new URL("/book", req.url);
   if (clean) url.searchParams.set("ref", clean.toUpperCase());
   return NextResponse.redirect(url);
 }

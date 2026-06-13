@@ -44,7 +44,7 @@ export default async function LandingPage() {
               books with your referral link.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/signup" className="rounded-2xl bg-orange-brand px-7 py-4 font-display text-base font-extrabold text-[#2A1A40] shadow-[0_18px_32px_-14px_rgba(242,150,14,.55)]">
+              <Link href="/book" className="rounded-2xl bg-orange-brand px-7 py-4 font-display text-base font-extrabold text-[#2A1A40] shadow-[0_18px_32px_-14px_rgba(242,150,14,.55)]">
                 Book a service
               </Link>
               <a href="#refer" className="rounded-2xl border-[1.5px] border-white/45 bg-white/10 px-6 py-4 font-display text-base font-bold text-white">
@@ -108,7 +108,7 @@ export default async function LandingPage() {
                 <div className="my-1.5 text-[13.5px] leading-relaxed text-muted">{s.description}</div>
                 <div className="mt-3 flex items-center justify-between">
                   <span className="font-display text-[15px] font-bold text-magenta-brand">from {formatZar(fromPriceCents(s, settings))}</span>
-                  <Link href="/signup" className="text-[13.5px] font-bold text-indigo-brand">Book ›</Link>
+                  <Link href={`/book?service=${s.id}`} className="text-[13.5px] font-bold text-indigo-brand">Book ›</Link>
                 </div>
               </div>
             </div>

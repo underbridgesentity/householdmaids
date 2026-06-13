@@ -23,9 +23,11 @@ const RECUR: { id: Recurrence; label: string; sub: string }[] = [
 
 export function BookingWizard({
   services, addons, areas, settings, dateOptions, referralEligible, referralCode, initialServiceId,
+  loggedIn, presetRef,
 }: {
   services: Service[]; addons: Addon[]; areas: Area[]; settings: Settings; dateOptions: DateOption[];
   referralEligible: boolean; referralCode?: string; initialServiceId?: string;
+  loggedIn: boolean; presetRef?: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(initialServiceId ? 1 : 0);
@@ -42,9 +44,17 @@ export function BookingWizard({
   const [applyReferral, setApplyReferral] = useState(referralEligible);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string>();
+  // Guest account (collected at the end if not signed in)
+  const [acctName, setAcctName] = useState("");
+  const [acctEmail, setAcctEmail] = useState("");
+  const [acctPhone, setAcctPhone] = useState("");
+  const [acctPassword, setAcctPassword] = useState("");
+  const [guestRef, setGuestRef] = useState(presetRef ?? "");
 
   const service = services.find((s) => s.id === serviceId)!;
   const effectiveHours = Math.max(hours, service.mode === "HOURS" ? service.minHours : 0);
+  // Discount preview: signed-in first-booking toggle, or a guest who entered a code.
+  const previewReferral = loggedIn ? applyReferral && referralEligible : guestRef.trim().length > 0;
 
   const breakdown = useMemo(
     () =>
@@ -53,16 +63,19 @@ export function BookingWizard({
         beds, baths, hours: effectiveHours,
         addonCents: addonIds.map((id) => addons.find((a) => a.id === id)?.price ?? 0),
         recurrence,
-        applyReferralDiscount: applyReferral && referralEligible,
+        applyReferralDiscount: previewReferral,
         settings,
       }),
-    [service, beds, baths, effectiveHours, addonIds, recurrence, applyReferral, referralEligible, addons, settings],
+    [service, beds, baths, effectiveHours, addonIds, recurrence, previewReferral, addons, settings],
   );
 
   const toggleAddon = (id: string) =>
     setAddonIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
+  const guestReady = loggedIn || (acctName.trim().length >= 2 && /.+@.+\..+/.test(acctEmail) && acctPassword.length >= 8);
+
   async function submit() {
+    if (!guestReady) return;
     setSubmitting(true);
     setSubmitError(undefined);
     const fd = new FormData();
@@ -76,6 +89,13 @@ export function BookingWizard({
     fd.set("recurrence", recurrence);
     fd.set("scheduledAt", `${dateIso}T${time}:00`);
     fd.set("applyReferral", applyReferral ? "true" : "false");
+    if (!loggedIn) {
+      fd.set("fullName", acctName);
+      fd.set("email", acctEmail);
+      fd.set("phone", acctPhone);
+      fd.set("password", acctPassword);
+      fd.set("referralCode", guestRef);
+    }
     try {
       const res = await createBookingAction(fd);
       if (res?.error) {
@@ -89,7 +109,7 @@ export function BookingWizard({
     }
   }
 
-  const back = () => (step === 0 ? router.push("/app") : setStep((s) => s - 1));
+  const back = () => (step === 0 ? router.push(loggedIn ? "/app" : "/") : setStep((s) => s - 1));
   const BackBtn = () => (
     <button onClick={back} aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</button>
   );
@@ -282,6 +302,25 @@ export function BookingWizard({
               </button>
             )}
 
+            {!loggedIn && (
+              <div className="mb-3.5 card p-4">
+                <div className="mb-1 font-display text-[15px] font-bold">Your details</div>
+                <div className="mb-3 text-[12.5px] text-muted">Create your account to confirm — or use your existing email &amp; password to sign in.</div>
+                <div className="flex flex-col gap-2.5">
+                  <input value={acctName} onChange={(e) => setAcctName(e.target.value)} placeholder="Full name" autoComplete="name" className="field bg-white" />
+                  <input value={acctEmail} onChange={(e) => setAcctEmail(e.target.value)} type="email" placeholder="Email" autoComplete="email" className="field bg-white" />
+                  <input value={acctPhone} onChange={(e) => setAcctPhone(e.target.value)} type="tel" placeholder="Mobile number (optional)" autoComplete="tel" className="field bg-white" />
+                  <input value={acctPassword} onChange={(e) => setAcctPassword(e.target.value)} type="password" placeholder="Create a password (min 8 chars)" autoComplete="new-password" className="field bg-white" />
+                  <div className="flex items-center gap-2.5 rounded-2xl border border-dashed border-[#d9c8e6] bg-surface-lav px-3.5 py-2.5">
+                    <span className="text-lg">🎟️</span>
+                    <input value={guestRef} onChange={(e) => setGuestRef(e.target.value)} placeholder="Referral code (optional)" className="w-full border-none bg-transparent text-[14px] font-bold uppercase tracking-wide text-magenta-brand outline-none placeholder:font-normal placeholder:normal-case placeholder:text-muted-faint" />
+                  </div>
+                  {guestRef.trim() && <div className="text-[12px] font-semibold text-magenta-brand">🎉 {formatZar(settings.firstBookingDiscountCents)} first-booking discount applied</div>}
+                </div>
+                <p className="mt-2 text-center text-[11.5px] text-muted-faint">By continuing you agree to our Terms &amp; Privacy Policy.</p>
+              </div>
+            )}
+
             <div className="card p-4">
               <Line label="Service" value={formatZar(breakdown.baseCents)} />
               <Line label="Extras" value={formatZar(breakdown.addonsCents)} />
@@ -301,9 +340,14 @@ export function BookingWizard({
                 {submitError}
               </div>
             )}
-            <button disabled={submitting} onClick={submit} className="btn-primary w-full">
-              {submitting ? "Preparing payment…" : "Continue to payment ›"}
+            <button disabled={submitting || !guestReady} onClick={submit} className="btn-primary w-full disabled:opacity-50">
+              {submitting ? "Preparing payment…" : loggedIn ? "Continue to payment ›" : "Create account & pay ›"}
             </button>
+            {!loggedIn && (
+              <p className="mt-2.5 text-center text-[12.5px] text-muted-soft">
+                Already have an account? Just enter your email &amp; password above.
+              </p>
+            )}
           </div>
         </>
       )}

@@ -19,9 +19,9 @@ export async function logout(page: Page) {
     .catch(() => {});
 }
 
-/** Drives the booking wizard from /app/book through to the paid track page. */
+/** Drives the booking wizard from /book through to the review step. */
 export async function bookAndPay(page: Page) {
-  await page.goto("/app/book");
+  await page.goto("/book");
   await page.getByRole("button").filter({ hasText: "Standard Clean" }).first().click();
   await expect(page.getByText("Customise your clean")).toBeVisible();
   await page.getByRole("button", { name: /Continue ›/ }).click();

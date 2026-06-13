@@ -143,6 +143,27 @@ test("responsive: mobile shows bottom tabs and hides the desktop sidebar", async
   await expect(page.locator("aside")).toBeHidden(); // sidebar hidden on mobile
 });
 
+test("guest can book without an account, then create one at checkout", async ({ page }) => {
+  const email = `guest_${Date.now()}@test.co.za`;
+  await page.goto("/book");
+  await page.getByRole("button").filter({ hasText: "Standard Clean" }).first().click();
+  await page.getByRole("button", { name: /Continue ›/ }).click();
+  await page.getByRole("button", { name: "Sandton", exact: true }).click();
+  await page.getByRole("button", { name: /Continue to schedule/ }).click();
+  await page.getByRole("button", { name: /Review booking/ }).click();
+  // Account fields appear only at the END (deferred signup)
+  await expect(page.getByPlaceholder("Full name")).toBeVisible();
+  await page.getByPlaceholder("Full name").fill("Guest Tester");
+  await page.getByPlaceholder("Email").fill(email);
+  await page.getByPlaceholder("Create a password (min 8 chars)").fill("Password123!");
+  await page.getByRole("button", { name: /Create account & pay/ }).click();
+  // Account created + signed in + taken to payment
+  await page.waitForURL("**/app/pay/**", { timeout: 20_000 });
+  await page.getByRole("button", { name: /simulate successful payment/i }).click();
+  await page.waitForURL("**/app/bookings/**");
+  await expect(page.getByText("Payment received")).toBeVisible();
+});
+
 test("password reset: request a link, reset, and sign in with the new password", async ({ page }) => {
   await page.goto("/forgot");
   await page.locator('input[name="email"]').fill("thandi@email.co.za");

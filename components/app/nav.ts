@@ -8,7 +8,7 @@ export type NavItem = {
 
 export const CUSTOMER_NAV: NavItem[] = [
   { label: "Home", href: "/app", icon: "🏠", exact: true },
-  { label: "Book", href: "/app/book", icon: "🧹" },
+  { label: "Book", href: "/book", icon: "🧹" },
   { label: "Wallet", href: "/app/wallet", icon: "💰", also: ["/app/withdraw", "/app/payouts"] },
   { label: "Messages", href: "/app/messages", icon: "💬" },
   { label: "Profile", href: "/app/profile", icon: "👤" },
