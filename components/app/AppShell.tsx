@@ -6,9 +6,12 @@ import { BottomTabs } from "./BottomTabs";
  */
 export function AppShell({ children, tabs = true }: { children: React.ReactNode; tabs?: boolean }) {
   return (
-    <div className="min-h-screen bg-[radial-gradient(1200px_600px_at_80%_-10%,#efe7f6_0%,#ded9e6_55%,#d4cee0_100%)] md:flex md:items-center md:justify-center md:py-8">
-      <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-surface md:min-h-0 md:h-[840px] md:w-[420px] md:rounded-[40px] md:border md:border-[#cdc4dd] md:shadow-phone">
-        <div className="hm-scroll flex-1 overflow-y-auto">{children}</div>
+    <div className="min-h-[100dvh] bg-[radial-gradient(1200px_600px_at_80%_-10%,#efe7f6_0%,#ded9e6_55%,#d4cee0_100%)]">
+      {/* Responsive app surface: full-bleed on phones, a centered fluid column on
+          larger screens (not a fixed phone mock). Page scrolls naturally; the tab
+          bar stays pinned to the viewport bottom. */}
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col bg-surface shadow-[0_0_90px_-28px_rgba(40,25,80,.4)]">
+        <div className="flex flex-1 flex-col">{children}</div>
         {tabs && <BottomTabs />}
       </div>
     </div>
