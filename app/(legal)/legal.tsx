@@ -7,7 +7,7 @@ export function LegalShell({ title, updated, children }: { title: string; update
     <div className="min-h-screen bg-white text-ink">
       <header className="sticky top-0 z-30 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-9">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Link href="/" aria-label="Household Maids home"><Logo height={40} /></Link>
+          <Link href="/" aria-label="Household Maids home"><Logo height={32} /></Link>
           <Link href="/" className="text-sm font-semibold text-magenta-brand">← Back to site</Link>
         </div>
       </header>

@@ -19,7 +19,7 @@ export function MarketingNav() {
     <header className="sticky top-3 z-40 px-3 md:top-4 md:px-5">
       <div className={`glass mx-auto max-w-6xl px-3 py-2 pl-4 transition-[border-radius] md:px-4 md:py-2.5 md:pl-6 ${open ? "rounded-[28px]" : "rounded-full"}`}>
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" onClick={() => setOpen(false)}><Logo height={44} /></Link>
+          <Link href="/" onClick={() => setOpen(false)}><Logo height={38} /></Link>
 
           {/* Desktop links */}
           <nav className="hidden items-center gap-7 lg:flex">

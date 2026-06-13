@@ -268,7 +268,7 @@ export default async function LandingPage() {
       <footer className="bg-ink px-6 py-10 text-white md:px-9">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-6">
           <div className="max-w-xs">
-            <Logo variant="white" height={40} />
+            <Logo variant="white" height={32} />
             <p className="mt-3.5 text-[13.5px] leading-relaxed text-white/60">
               Trusted home &amp; commercial cleaning across Gauteng. Book in a minute, earn on every referral.
             </p>

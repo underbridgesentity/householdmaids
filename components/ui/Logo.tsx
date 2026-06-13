@@ -1,16 +1,19 @@
 import Image from "next/image";
 
-// Intrinsic aspect ratios of the source files (logo wordmarks are 16:9, the
-// mark is square). Using the true ratio avoids the horizontal stretch.
-const RATIO = { full: 16 / 9, white: 16 / 9, mark: 1 } as const;
+// Tight-cropped wordmarks (transparent padding removed) so the logo fills the
+// given height instead of being letterboxed. Ratios are the trimmed dimensions.
+const SRC = {
+  full: "/brand/logo-tight.png",
+  white: "/brand/logo-white-tight.png",
+  mark: "/brand/logo-mark.png",
+} as const;
+const RATIO = { full: 5.349, white: 5.361, mark: 1 } as const;
 
-export function Logo({ variant = "full", height = 44 }: { variant?: "full" | "mark" | "white"; height?: number }) {
-  const src =
-    variant === "mark" ? "/brand/logo-mark.png" : variant === "white" ? "/brand/logo-white.png" : "/brand/logo.png";
+export function Logo({ variant = "full", height = 30 }: { variant?: "full" | "mark" | "white"; height?: number }) {
   const width = Math.round(height * RATIO[variant]);
   return (
     <Image
-      src={src}
+      src={SRC[variant]}
       alt="Household Maids"
       width={width}
       height={height}

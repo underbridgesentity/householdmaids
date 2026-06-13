@@ -15,7 +15,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
       <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-brand via-purple-mid to-magenta-brand p-12 text-white lg:flex">
         <div className="absolute -right-28 -top-28 h-80 w-80 rounded-full bg-white/[.07]" />
         <div className="relative z-10 [filter:drop-shadow(0_2px_10px_rgba(0,0,0,.28))]">
-          <Logo variant="white" height={56} />
+          <Logo variant="white" height={42} />
         </div>
         <div className="relative z-10">
           <h1 className="font-display text-4xl font-extrabold leading-tight">A sparkling home,<br />a click away.</h1>
@@ -29,7 +29,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
       {/* Form */}
       <div className="flex items-center justify-center bg-surface px-6 py-10">
         <div className="w-full max-w-md">
-          <div className="mb-6 lg:hidden"><Link href="/" aria-label="Household Maids home"><Logo height={44} /></Link></div>
+          <div className="mb-6 lg:hidden"><Link href="/" aria-label="Household Maids home"><Logo height={36} /></Link></div>
           <h2 className="font-display text-[27px] font-extrabold tracking-tight">Create your account</h2>
           <p className="mb-6 mt-1 text-sm text-muted-soft">Book cleans, earn referral cash, all in one place.</p>
           <SignupForm presetCode={ref} />

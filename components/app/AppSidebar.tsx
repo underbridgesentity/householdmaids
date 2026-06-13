@@ -16,7 +16,7 @@ export function AppSidebar({
   return (
     <aside className="sticky top-0 hidden h-screen w-64 flex-shrink-0 flex-col border-r border-line bg-white/70 px-4 py-5 backdrop-blur lg:flex">
       <div className="px-2 pb-6">
-        <Link href={items[0]?.href ?? "/app"}><Logo height={40} /></Link>
+        <Link href={items[0]?.href ?? "/app"}><Logo height={32} /></Link>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">

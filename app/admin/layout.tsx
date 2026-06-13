@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <aside className="w-full shrink-0 lg:w-[232px]">
           <div className="flex flex-col gap-5 rounded-[18px] border border-line bg-white p-4">
             <div className="flex items-center justify-between px-1">
-              <Logo height={28} />
+              <Logo height={26} />
               <span className="rounded-full bg-surface-lav px-2.5 py-1 text-[11px] font-bold uppercase tracking-[.06em] text-indigo-brand">Admin</span>
             </div>
 
