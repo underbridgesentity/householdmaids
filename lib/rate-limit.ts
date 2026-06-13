@@ -9,12 +9,14 @@ import { Redis } from "@upstash/redis";
  *  - Otherwise falls back to an in-memory window (fine for a single instance / dev).
  */
 
+// Accept either Upstash's own var names or the Vercel KV / Upstash-Marketplace
+// names, so connecting Upstash via either route just works.
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+
 let redis: Redis | null = null;
-if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-  redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
+if (redisUrl && redisToken) {
+  redis = new Redis({ url: redisUrl, token: redisToken });
 }
 
 type Bucket = { count: number; resetAt: number };
