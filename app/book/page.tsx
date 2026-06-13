@@ -43,36 +43,30 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   });
 
   return (
-    <div className="min-h-[100dvh] bg-[radial-gradient(1200px_600px_at_80%_-10%,#efe7f6_0%,#ded9e6_55%,#d4cee0_100%)]">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[680px] flex-col bg-surface shadow-[0_0_90px_-28px_rgba(40,25,80,.4)]">
-        {/* Slim brand header */}
-        <div className="flex items-center justify-between border-b border-line bg-white/70 px-5 py-3 backdrop-blur">
-          <Link href={loggedIn ? "/app" : "/"} aria-label="Household Maids home"><Logo height={30} /></Link>
-          {!loggedIn && (
-            <Link href="/login" className="text-[13px] font-bold text-magenta-brand">Sign in</Link>
-          )}
-        </div>
-        <div className="flex flex-1 flex-col">
-          <BookingWizard
-            services={services.map((s) => ({ id: s.id, name: s.name, emoji: s.emoji, tint: s.tint, description: s.description, mode: s.mode, basePrice: s.basePrice, hourlyRate: s.hourlyRate, minHours: s.minHours }))}
-            addons={addons.map((a) => ({ id: a.id, name: a.name, emoji: a.emoji, price: a.price }))}
-            areas={areas.map((a) => ({ id: a.id, name: a.name }))}
-            settings={{
-              perBedroomCents: settings.perBedroomCents,
-              perBathroomCents: settings.perBathroomCents,
-              weeklyDiscountPct: settings.weeklyDiscountPct,
-              biweeklyDiscountPct: settings.biweeklyDiscountPct,
-              firstBookingDiscountCents: settings.firstBookingDiscountCents,
-            }}
-            dateOptions={dateOptions}
-            referralEligible={referralEligible}
-            referralCode={referralCode}
-            initialServiceId={service}
-            loggedIn={loggedIn}
-            presetRef={ref}
-          />
-        </div>
+    <div className="min-h-[100dvh] bg-surface">
+      {/* Slim header on mobile only (desktop branding lives in the wizard's side panel) */}
+      <div className="flex items-center justify-between border-b border-line bg-white/70 px-5 py-3 backdrop-blur lg:hidden">
+        <Link href={loggedIn ? "/app" : "/"} aria-label="Household Maids home"><Logo height={28} /></Link>
+        {!loggedIn && <Link href="/login" className="text-[13px] font-bold text-magenta-brand">Sign in</Link>}
       </div>
+      <BookingWizard
+        services={services.map((s) => ({ id: s.id, name: s.name, emoji: s.emoji, tint: s.tint, description: s.description, mode: s.mode, basePrice: s.basePrice, hourlyRate: s.hourlyRate, minHours: s.minHours }))}
+        addons={addons.map((a) => ({ id: a.id, name: a.name, emoji: a.emoji, price: a.price }))}
+        areas={areas.map((a) => ({ id: a.id, name: a.name }))}
+        settings={{
+          perBedroomCents: settings.perBedroomCents,
+          perBathroomCents: settings.perBathroomCents,
+          weeklyDiscountPct: settings.weeklyDiscountPct,
+          biweeklyDiscountPct: settings.biweeklyDiscountPct,
+          firstBookingDiscountCents: settings.firstBookingDiscountCents,
+        }}
+        dateOptions={dateOptions}
+        referralEligible={referralEligible}
+        referralCode={referralCode}
+        initialServiceId={service}
+        loggedIn={loggedIn}
+        presetRef={ref}
+      />
     </div>
   );
 }

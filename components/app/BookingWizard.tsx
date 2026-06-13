@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { computePrice, type Recurrence } from "@/lib/pricing";
 import { formatZar } from "@/lib/money";
 import { servicePhoto } from "@/lib/service-photos";
+import { Logo } from "@/components/ui/Logo";
 import { createBookingAction } from "@/app/actions/booking";
 
 type Service = { id: string; name: string; emoji: string; tint: string; description: string; mode: "ROOMS" | "HOURS"; basePrice: number; hourlyRate: number; minHours: number };
@@ -115,9 +117,61 @@ export function BookingWizard({
   );
   const area = areas.find((a) => a.id === areaId);
   const dateLabel = dateOptions.find((d) => d.iso === dateIso);
+  const configSummary = service.mode === "ROOMS" ? `${beds} bed · ${baths} bath` : `${effectiveHours} hours`;
 
   return (
-    <div className="flex min-h-screen flex-col md:min-h-0 md:h-full">
+    <div className="lg:grid lg:min-h-[100dvh] lg:grid-cols-[minmax(0,400px)_1fr]">
+      {/* Desktop-only brand panel with a live order summary */}
+      <aside className="relative hidden overflow-hidden bg-hero-gradient p-9 text-white lg:flex lg:flex-col">
+        <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/[.06]" />
+        <Link href={loggedIn ? "/app" : "/"} className="relative z-10" aria-label="Household Maids home"><Logo variant="white" height={30} /></Link>
+        <div className="relative z-10 mt-10 flex-1">
+          {step === 0 ? (
+            <>
+              <h2 className="font-display text-[30px] font-extrabold leading-[1.12] tracking-tight">Book a sparkling clean in a minute</h2>
+              <p className="mt-3 max-w-xs text-[15px] leading-relaxed text-white/80">Choose a service, size and time. You only create your account at the very end.</p>
+              <div className="mt-9 flex flex-col gap-3.5 text-sm font-semibold text-white/90">
+                <div>🛡️ Vetted &amp; insured cleaners</div>
+                <div>🔒 Secure Payfast payments</div>
+                <div>🎟️ Earn on every referral</div>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-[20px] border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="text-[12px] font-bold uppercase tracking-wide text-white/70">Your booking</div>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-xl">{service.emoji}</div>
+                <div>
+                  <div className="font-display text-[15px] font-bold">{service.name}</div>
+                  <div className="text-[12.5px] text-white/75">{configSummary}</div>
+                </div>
+              </div>
+              {step >= 2 && (
+                <div className="mt-4 flex flex-col gap-1.5 text-[13px] text-white/85">
+                  <div className="flex justify-between"><span className="text-white/70">📍 Area</span><span className="font-semibold">{area?.name}</span></div>
+                  {step >= 3 && <div className="flex justify-between"><span className="text-white/70">🗓 When</span><span className="font-semibold">{dateLabel?.label} {dateLabel?.sub} · {time}</span></div>}
+                </div>
+              )}
+              <div className="my-4 h-px bg-white/15" />
+              <div className="flex flex-col gap-1.5 text-[13px] text-white/85">
+                <div className="flex justify-between"><span>Service</span><span>{formatZar(breakdown.baseCents)}</span></div>
+                {breakdown.addonsCents > 0 && <div className="flex justify-between"><span>Extras</span><span>{formatZar(breakdown.addonsCents)}</span></div>}
+                {breakdown.recurringDiscountCents > 0 && <div className="flex justify-between text-white"><span>Recurring discount</span><span>−{formatZar(breakdown.recurringDiscountCents)}</span></div>}
+                {breakdown.referralDiscountCents > 0 && <div className="flex justify-between text-white"><span>Referral discount</span><span>−{formatZar(breakdown.referralDiscountCents)}</span></div>}
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-white/15 pt-3">
+                <span className="font-display font-bold">Total</span>
+                <span className="font-display text-[26px] font-extrabold">{formatZar(breakdown.totalCents)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="relative z-10 text-[12px] text-white/55">© 2026 Household Maids · Mukhoni Cleaning Specialists</div>
+      </aside>
+
+      {/* Step content */}
+      <div className="flex min-h-screen flex-col bg-surface md:min-h-0 lg:min-h-[100dvh] lg:overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col lg:py-6">
       {/* STEP 0 — choose service */}
       {step === 0 && (
         <div className="flex-1">
@@ -279,7 +333,7 @@ export function BookingWizard({
             </div>
           </div>
           <div className="flex-1 px-[18px]">
-            <div className="mb-3.5 card p-4">
+            <div className="mb-3.5 card p-4 lg:hidden">
               <div className="flex items-center gap-3 border-b border-[#f0ebf6] pb-3.5">
                 <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] bg-surface-lav text-[22px]">{service.emoji}</div>
                 <div className="flex-1">
@@ -321,7 +375,7 @@ export function BookingWizard({
               </div>
             )}
 
-            <div className="card p-4">
+            <div className="card p-4 lg:hidden">
               <Line label="Service" value={formatZar(breakdown.baseCents)} />
               <Line label="Extras" value={formatZar(breakdown.addonsCents)} />
               {breakdown.recurringDiscountCents > 0 && <Line label="Recurring discount" value={`−${formatZar(breakdown.recurringDiscountCents)}`} money />}
@@ -351,6 +405,8 @@ export function BookingWizard({
           </div>
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 }

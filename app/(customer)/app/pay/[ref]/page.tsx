@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
 import { formatZar } from "@/lib/money";
-import { AppShell } from "@/components/app/AppShell";
+import { Logo } from "@/components/ui/Logo";
 import { payfastConfig, payfastProcessUrl, buildCheckoutFields } from "@/lib/payfast";
 import { simulatePaymentAction } from "@/app/actions/booking";
 
@@ -13,7 +13,7 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
   const user = await requireRole("CUSTOMER");
   const { ref } = await params;
 
-  const booking = await prisma.booking.findUnique({ where: { reference: ref }, include: { service: true } });
+  const booking = await prisma.booking.findUnique({ where: { reference: ref }, include: { service: true, area: true } });
   if (!booking || booking.customerId !== user.id) notFound();
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -31,19 +31,38 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
   const processUrl = payfastProcessUrl(cfg);
   const simulate = simulatePaymentAction.bind(null, booking.reference);
   const isDev = process.env.NODE_ENV !== "production";
+  const whenLabel = new Date(booking.scheduledAt).toLocaleString("en-ZA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <AppShell tabs={false} narrow>
-      <div className="flex min-h-screen flex-col md:min-h-0 md:h-full">
-        <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
-          <Link href="/app/book" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</Link>
-          <div>
-            <div className="font-display text-xl font-extrabold">Secure payment</div>
-            <div className="text-[12.5px] text-muted">🔒 Encrypted · powered by Payfast</div>
+    <div className="min-h-[100dvh] bg-surface lg:flex">
+      {/* Order summary — gradient panel (left on desktop, header on mobile) */}
+      <aside className="relative overflow-hidden bg-hero-gradient p-6 text-white lg:flex lg:w-[400px] lg:flex-col lg:p-9">
+        <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/[.06]" />
+        <Link href="/app" className="relative z-10" aria-label="Household Maids home"><Logo variant="white" height={28} /></Link>
+        <div className="relative z-10 mt-6 lg:mt-10 lg:flex-1">
+          <h1 className="font-display text-2xl font-extrabold">Secure payment</h1>
+          <p className="mt-1 text-[13px] text-white/80">🔒 Encrypted · powered by Payfast</p>
+          <div className="mt-5 rounded-[20px] border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
+            <div className="text-[12px] font-bold uppercase tracking-wide text-white/70">Your order</div>
+            <div className="mt-3 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-xl">{booking.service.emoji}</div>
+              <div>
+                <div className="font-display text-[15px] font-bold">{booking.service.name}</div>
+                <div className="text-[12.5px] text-white/75">{booking.area.name} · {whenLabel}</div>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-white/15 pt-3">
+              <span className="font-display font-bold">Total</span>
+              <span className="font-display text-[26px] font-extrabold">{formatZar(booking.totalCents)}</span>
+            </div>
+            <div className="mt-1 text-[11.5px] text-white/60">Ref {booking.reference}</div>
           </div>
         </div>
+      </aside>
 
-        <div className="flex-1 px-[18px]">
+      {/* Payment */}
+      <div className="flex flex-1 flex-col p-6 lg:items-center lg:justify-center lg:p-9">
+        <div className="mx-auto w-full max-w-[440px]">
           <div className="relative mb-4 overflow-hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-card">
             <div className="absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-white/10" />
             <div className="mb-7 flex items-center justify-between"><span className="text-[13px] opacity-85">Household Maids</span><span className="text-[22px]">💳</span></div>
@@ -53,33 +72,25 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
 
           <div className="flex items-center gap-2.5 rounded-[13px] bg-[#eef6f0] px-3.5 py-3">
             <span className="text-[17px]">🔐</span>
-            <span className="text-[12.5px] leading-snug text-money-dark">Paying here is how we verify a referral. Your friend earns once this payment clears.</span>
+            <span className="text-[12.5px] leading-snug text-money-dark">You&apos;ll be taken to Payfast to complete payment securely. A referral reward is earned once your payment clears.</span>
           </div>
 
+          <form action={processUrl} method="post" className="mt-5">
+            {Object.entries(fields).map(([k, v]) => (
+              <input key={k} type="hidden" name={k} value={v} />
+            ))}
+            <button type="submit" className="btn-primary w-full">Pay {formatZar(booking.totalCents)} ›</button>
+          </form>
+
           {isDev && (
-            <form action={simulate} className="mt-4">
+            <form action={simulate} className="mt-3">
               <button className="w-full rounded-[14px] border-[1.5px] border-dashed border-[#cfc6dd] bg-white px-4 py-3 text-[13px] font-semibold text-muted">
                 ▶ Dev: simulate successful payment
               </button>
             </form>
           )}
         </div>
-
-        <div className="mt-auto flex items-center gap-3.5 border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
-          <div className="flex-1">
-            <div className="text-[10.5px] uppercase tracking-wide text-muted-faint">Total</div>
-            <div className="font-display text-[21px] font-extrabold">{formatZar(booking.totalCents)}</div>
-          </div>
-          <form action={processUrl} method="post">
-            {Object.entries(fields).map(([k, v]) => (
-              <input key={k} type="hidden" name={k} value={v} />
-            ))}
-            <button type="submit" className="rounded-[15px] bg-brand-gradient px-6 py-3.5 font-display font-bold text-white">
-              Pay {formatZar(booking.totalCents)}
-            </button>
-          </form>
-        </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

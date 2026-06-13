@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Logo } from "@/components/ui/Logo";
 import { submitHelperApplicationAction } from "@/app/actions/helper";
 
 type Area = { id: string; name: string };
@@ -70,8 +72,32 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
     }
   }
 
+  const steps = ["Your details", "Experience & areas", "Banking"];
   return (
-    <div className="flex min-h-screen flex-col md:min-h-0 md:h-full">
+    <div className="lg:grid lg:min-h-[100dvh] lg:grid-cols-[minmax(0,400px)_1fr]">
+      {/* Desktop brand panel */}
+      <aside className="relative hidden overflow-hidden bg-hero-gradient p-9 text-white lg:flex lg:flex-col">
+        <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/[.06]" />
+        <Link href="/" className="relative z-10" aria-label="Household Maids home"><Logo variant="white" height={30} /></Link>
+        <div className="relative z-10 mt-10 flex-1">
+          <div className="text-[50px]">🧽</div>
+          <h2 className="mt-4 font-display text-[28px] font-extrabold leading-[1.12] tracking-tight">Join the Household Maids team</h2>
+          <p className="mt-3 max-w-xs text-[15px] leading-relaxed text-white/80">A quick 3-step application. We verify your details, then get you earning — paid every Friday.</p>
+          <div className="mt-9 flex flex-col gap-3">
+            {steps.map((label, i) => (
+              <div key={label} className={`flex items-center gap-3 text-sm font-semibold ${i <= step ? "text-white" : "text-white/55"}`}>
+                <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] ${i < step ? "bg-white text-indigo-brand" : i === step ? "bg-white/25" : "bg-white/10"}`}>{i < step ? "✓" : i + 1}</span>
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="relative z-10 text-[12px] text-white/55">🔒 Your ID &amp; banking details are encrypted.</div>
+      </aside>
+
+      {/* Step content */}
+      <div className="flex min-h-screen flex-col bg-surface md:min-h-0 lg:min-h-[100dvh] lg:overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col lg:py-6">
       {/* Header + progress */}
       <div className="px-5 pb-3.5 pt-2">
         <div className="flex items-center gap-3">
@@ -226,6 +252,8 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
           </div>
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 }
