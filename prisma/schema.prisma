@@ -1,0 +1,373 @@
+// Household Maids — data model
+// Money is always stored in integer cents (ZAR). Wallet balance is derived
+// from the WalletTransaction ledger, never stored as a mutable field.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  HELPER
+  ADMIN
+}
+
+enum ServiceMode {
+  ROOMS
+  HOURS
+}
+
+enum Recurrence {
+  ONCE
+  WEEKLY
+  BIWEEKLY
+}
+
+enum BookingStatus {
+  CONFIRMED
+  HELPER_ASSIGNED
+  EN_ROUTE
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum HelperStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum DocumentType {
+  ID_DOCUMENT
+  SELFIE
+  POLICE_CLEARANCE
+  REFERENCE
+}
+
+enum WalletTxnType {
+  REFERRAL_REWARD
+  WITHDRAWAL
+  ADJUSTMENT
+}
+
+enum WalletTxnStatus {
+  PENDING
+  EARNED
+  PAID
+  REVERSED
+}
+
+enum ReferralStatus {
+  PENDING
+  EARNED
+  PAID
+}
+
+enum PayoutStatus {
+  REQUESTED
+  PROCESSING
+  PAID
+  HELD
+}
+
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String   @id @default(cuid())
+  role          Role     @default(CUSTOMER)
+  fullName      String
+  email         String   @unique
+  phone         String?
+  passwordHash  String
+  emailVerified DateTime?
+  bankAccountEnc String? // encrypted JSON {bank, accountNumber, type} for referral payouts
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  addresses      Address[]
+  helperProfile  HelperProfile?
+  bookings       Booking[]         @relation("CustomerBookings")
+  reviewsGiven   Review[]          @relation("ReviewAuthor")
+  messages       Message[]
+  referralCode   ReferralCode?
+  referralsMade  Referral[]        @relation("Referrer")
+  referredBy     Referral?         @relation("Referee")
+  walletTxns     WalletTransaction[]
+  payouts        PayoutRequest[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  line      String
+  unit      String?
+  areaId    String?
+  area      Area?   @relation(fields: [areaId], references: [id])
+  isDefault Boolean @default(false)
+}
+
+model Area {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  active    Boolean   @default(true)
+  bookings  Booking[]
+  addresses Address[]
+  helpers   HelperProfile[] @relation("HelperAreas")
+}
+
+model Service {
+  id          String      @id @default(cuid())
+  name        String
+  emoji       String
+  tint        String
+  description String
+  mode        ServiceMode
+  basePrice   Int         @default(0) // cents, ROOMS base
+  hourlyRate  Int         @default(0) // cents, HOURS rate
+  minHours    Int         @default(1)
+  active      Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  bookings    Booking[]
+}
+
+model Addon {
+  id       String  @id @default(cuid())
+  name     String
+  emoji    String
+  price    Int // cents
+  active   Boolean @default(true)
+  bookings BookingAddon[]
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  reference     String        @unique
+  customerId    String
+  customer      User          @relation("CustomerBookings", fields: [customerId], references: [id])
+  helperId      String?
+  helper        HelperProfile? @relation(fields: [helperId], references: [id])
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  areaId        String
+  area          Area          @relation(fields: [areaId], references: [id])
+  addressText   String
+  beds          Int           @default(0)
+  baths         Int           @default(0)
+  hours         Int           @default(0)
+  recurrence    Recurrence    @default(ONCE)
+  scheduledAt   DateTime
+  status        BookingStatus @default(CONFIRMED)
+  priceSnapshot Json // frozen server-computed breakdown
+  totalCents    Int
+  paymentStatus PaymentStatus @default(PENDING)
+  isFirstBooking Boolean      @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  addons       BookingAddon[]
+  payment      PaymentTransaction?
+  review       Review?
+  conversation Conversation?
+  referral     Referral?
+}
+
+model BookingAddon {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  addonId   String
+  addon     Addon   @relation(fields: [addonId], references: [id])
+  priceCents Int
+
+  @@unique([bookingId, addonId])
+}
+
+model HelperProfile {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idNumberEnc     String? // encrypted at rest
+  yearsExperience Int          @default(0)
+  status          HelperStatus @default(PENDING)
+  rating          Float        @default(0)
+  completedJobs   Int          @default(0)
+  bankAccountEnc  String? // encrypted JSON {bank, accountNumber, type}
+  // vetting flags
+  idUploaded         Boolean   @default(false)
+  selfieUploaded     Boolean   @default(false)
+  referencesAdded    Boolean   @default(false)
+  clearanceConsent   Boolean   @default(false)
+  backgroundCheckPassed Boolean @default(false)
+  createdAt       DateTime     @default(now())
+
+  areas     Area[]            @relation("HelperAreas")
+  documents HelperDocument[]
+  bookings  Booking[]
+  reviews   Review[]          @relation("HelperReviews")
+}
+
+model HelperDocument {
+  id         String        @id @default(cuid())
+  helperId   String
+  helper     HelperProfile @relation(fields: [helperId], references: [id], onDelete: Cascade)
+  type       DocumentType
+  storageKey String
+  verified   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+}
+
+model Review {
+  id         String        @id @default(cuid())
+  bookingId  String        @unique
+  booking    Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   User          @relation("ReviewAuthor", fields: [customerId], references: [id])
+  helperId   String
+  helper     HelperProfile @relation("HelperReviews", fields: [helperId], references: [id])
+  stars      Int
+  note       String?
+  tags       String[]
+  createdAt  DateTime      @default(now())
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  bookingId String    @unique
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  messages  Message[]
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  body           String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+}
+
+model ReferralCode {
+  id       String     @id @default(cuid())
+  code     String     @unique
+  ownerId  String     @unique
+  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  referrals Referral[]
+}
+
+model Referral {
+  id         String         @id @default(cuid())
+  codeId     String
+  code       ReferralCode   @relation(fields: [codeId], references: [id])
+  referrerId String
+  referrer   User           @relation("Referrer", fields: [referrerId], references: [id])
+  refereeId  String         @unique
+  referee    User           @relation("Referee", fields: [refereeId], references: [id])
+  bookingId  String?        @unique
+  booking    Booking?       @relation(fields: [bookingId], references: [id])
+  rewardCents Int           @default(0)
+  status     ReferralStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+  earnedAt   DateTime?
+}
+
+model WalletTransaction {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         WalletTxnType
+  amountCents  Int // signed: positive = credit, negative = debit
+  status       WalletTxnStatus
+  balanceAfter Int
+  ref          String?
+  createdAt    DateTime        @default(now())
+}
+
+model PayoutCycle {
+  id         String          @id @default(cuid())
+  label      String // e.g. "Fri 20 Jun"
+  runAt      DateTime?
+  createdAt  DateTime        @default(now())
+  requests   PayoutRequest[]
+}
+
+model PayoutRequest {
+  id          String       @id @default(cuid())
+  reference   String       @unique
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountCents Int
+  status      PayoutStatus @default(REQUESTED)
+  bankSnapshot Json
+  cycleId     String?
+  cycle       PayoutCycle? @relation(fields: [cycleId], references: [id])
+  requestedAt DateTime     @default(now())
+  paidAt      DateTime?
+}
+
+model PaymentTransaction {
+  id          String        @id @default(cuid())
+  bookingId   String        @unique
+  booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amountCents Int
+  status      PaymentStatus @default(PENDING)
+  provider    String        @default("payfast")
+  providerRef String? // m_payment_id / pf_payment_id
+  raw         Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// Singleton row holding admin-tunable program settings (all in cents / percent).
+model PlatformSettings {
+  id                       String @id @default("singleton")
+  referrerRewardCents      Int    @default(5000) // R50
+  firstBookingDiscountCents Int   @default(7500) // R75
+  weeklyDiscountPct        Int    @default(15)
+  biweeklyDiscountPct      Int    @default(10)
+  perBedroomCents          Int    @default(9000) // R90
+  perBathroomCents         Int    @default(7000) // R70
+  updatedAt                DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+}

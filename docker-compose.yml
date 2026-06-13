@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hhm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hhm
+      POSTGRES_PASSWORD: hhm
+      POSTGRES_DB: household_maids
+    ports:
+      - "5433:5432"
+    volumes:
+      - hhm_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hhm -d household_maids"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  hhm_pgdata:

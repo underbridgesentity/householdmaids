@@ -1,0 +1,205 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { submitHelperApplicationAction } from "@/app/actions/helper";
+
+type Area = { id: string; name: string };
+
+/** 3-step helper onboarding wizard. Submits to submitHelperApplicationAction. */
+export function HelperApplication({ areas }: { areas: Area[] }) {
+  const router = useRouter();
+  const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+  const [areaIds, setAreaIds] = useState<string[]>([]);
+  const [yearsExperience, setYearsExperience] = useState("");
+  const [bank, setBank] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountType, setAccountType] = useState("Cheque");
+
+  const progress = [33, 66, 100][step];
+
+  const toggleArea = (id: string) =>
+    setAreaIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+
+  const back = () => (step === 0 ? router.push("/helper") : setStep((s) => s - 1));
+  const BackBtn = () => (
+    <button onClick={back} className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</button>
+  );
+
+  const step1Ready = fullName && email && phone && password.length >= 8 && idNumber;
+  const step2Ready = areaIds.length > 0 && yearsExperience !== "";
+  const step3Ready = bank && accountNumber && accountType;
+
+  function submit() {
+    setSubmitting(true);
+    const fd = new FormData();
+    fd.set("fullName", fullName);
+    fd.set("email", email);
+    fd.set("phone", phone);
+    fd.set("password", password);
+    fd.set("idNumber", idNumber);
+    fd.set("yearsExperience", yearsExperience || "0");
+    areaIds.forEach((id) => fd.append("areaIds", id));
+    fd.set("bank", bank);
+    fd.set("accountNumber", accountNumber);
+    fd.set("accountType", accountType);
+    fd.set("clearanceConsent", "true");
+    submitHelperApplicationAction(fd).catch(() => setSubmitting(false));
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col md:min-h-0 md:h-full">
+      {/* Header + progress */}
+      <div className="px-5 pb-3.5 pt-2">
+        <div className="flex items-center gap-3">
+          <BackBtn />
+          <div>
+            <div className="font-display text-xl font-extrabold">
+              {step === 0 ? "Your details" : step === 1 ? "Experience" : "Get paid"}
+            </div>
+            <div className="text-[12.5px] text-muted">
+              {step === 0
+                ? "Step 1 of 3 · Verification"
+                : step === 1
+                  ? "Step 2 of 3 · Vetting"
+                  : "Step 3 of 3 · Banking"}
+            </div>
+          </div>
+        </div>
+        <div className="mt-3.5 h-1.5 overflow-hidden rounded-full bg-line">
+          <div className="h-full rounded-full bg-brand-gradient transition-all" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      {/* STEP 1 — details */}
+      {step === 0 && (
+        <>
+          <div className="flex-1 px-[18px]">
+            <label className="label">Full name</label>
+            <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Thandi Mokoena" className="field mb-3.5 bg-white" />
+            <label className="label">Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" className="field mb-3.5 bg-white" />
+            <label className="label">Phone</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="082 000 0000" className="field mb-3.5 bg-white" />
+            <label className="label">Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className="field mb-3.5 bg-white" />
+            <label className="label">ID number</label>
+            <input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder="South African ID" className="field mb-4 bg-white" />
+
+            {/* Uploads are mocked in this build — these tiles are visual only. */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col items-center justify-center rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-surface-lav py-5 text-center">
+                <div className="text-[26px]">🪪</div>
+                <div className="mt-1 font-display text-[13px] font-bold">Upload ID</div>
+                <div className="mt-0.5 text-[11.5px] font-semibold text-money">✓ Uploaded</div>
+              </div>
+              <div className="flex flex-col items-center justify-center rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-surface-lav py-5 text-center">
+                <div className="text-[26px]">🤳</div>
+                <div className="mt-1 font-display text-[13px] font-bold">Selfie</div>
+                <div className="mt-0.5 text-[11.5px] font-semibold text-money">✓ Uploaded</div>
+              </div>
+            </div>
+            <div className="h-4" />
+          </div>
+          <FooterButton disabled={!step1Ready} onClick={() => setStep(1)} label="Continue ›" />
+        </>
+      )}
+
+      {/* STEP 2 — experience */}
+      {step === 1 && (
+        <>
+          <div className="flex-1 px-[18px]">
+            <div className="mb-3 px-0.5 font-display text-sm font-bold text-muted-label">Areas you can work in</div>
+            <div className="mb-5 flex flex-wrap gap-2.5">
+              {areas.map((a) => {
+                const sel = areaIds.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => toggleArea(a.id)}
+                    className={`rounded-full border-[1.5px] px-4 py-2 text-[13.5px] font-bold ${sel ? "border-magenta-brand bg-surface-pink text-magenta-brand" : "border-line-input bg-white text-[#5f5878]"}`}
+                  >
+                    {a.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            <label className="label">Years of experience</label>
+            <input
+              type="number"
+              min={0}
+              value={yearsExperience}
+              onChange={(e) => setYearsExperience(e.target.value)}
+              placeholder="e.g. 4"
+              className="field mb-5 bg-white"
+            />
+
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center gap-3 rounded-[15px] border border-line bg-white p-3.5">
+                <div className="text-xl">📇</div>
+                <div className="flex-1 font-display text-[14.5px] font-semibold">2 references</div>
+                <div className="text-[13px] font-semibold text-money">✓ Added</div>
+              </div>
+              <div className="flex items-center gap-3 rounded-[15px] border border-line bg-white p-3.5">
+                <div className="text-xl">🛡️</div>
+                <div className="flex-1 font-display text-[14.5px] font-semibold">Police clearance</div>
+                <div className="text-[13px] font-semibold text-money">✓ Signed</div>
+              </div>
+            </div>
+            <div className="h-4" />
+          </div>
+          <FooterButton disabled={!step2Ready} onClick={() => setStep(2)} label="Continue ›" />
+        </>
+      )}
+
+      {/* STEP 3 — banking */}
+      {step === 2 && (
+        <>
+          <div className="flex-1 px-[18px]">
+            <label className="label">Bank</label>
+            <input value={bank} onChange={(e) => setBank(e.target.value)} placeholder="e.g. FNB" className="field mb-3.5 bg-white" />
+            <label className="label">Account number</label>
+            <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="Account number" className="field mb-3.5 bg-white" />
+            <label className="label">Account type</label>
+            <select value={accountType} onChange={(e) => setAccountType(e.target.value)} className="field mb-4 bg-white">
+              <option>Cheque</option>
+              <option>Savings</option>
+              <option>Transmission</option>
+            </select>
+
+            <div className="flex items-center gap-3 rounded-[15px] border border-[#cfe8d8] bg-[#eef6f0] p-3.5">
+              <div className="text-xl">🔒</div>
+              <div className="text-[12.5px] font-semibold text-money-dark">
+                Your banking details are encrypted and stored securely. Only used for your Friday payouts.
+              </div>
+            </div>
+            <div className="h-4" />
+          </div>
+          <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
+            <button disabled={submitting || !step3Ready} onClick={submit} className="btn-primary w-full disabled:opacity-50">
+              {submitting ? "Submitting…" : "Submit application ›"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FooterButton({ onClick, label, disabled }: { onClick: () => void; label: string; disabled?: boolean }) {
+  return (
+    <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
+      <button onClick={onClick} disabled={disabled} className="btn-primary w-full disabled:opacity-50">
+        {label}
+      </button>
+    </div>
+  );
+}
