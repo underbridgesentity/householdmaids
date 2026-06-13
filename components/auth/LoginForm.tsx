@@ -22,7 +22,10 @@ export function LoginForm() {
         <span className="label">Password</span>
         <input name="password" type="password" required placeholder="Your password" className="field mt-1.5" />
       </label>
-      <button type="submit" disabled={pending} className="btn-primary mt-2 w-full">
+      <div className="-mt-1 text-right">
+        <Link href="/forgot" className="text-[13px] font-semibold text-magenta-brand">Forgot password?</Link>
+      </div>
+      <button type="submit" disabled={pending} className="btn-primary mt-1 w-full">
         {pending ? "Signing in…" : "Sign in"}
       </button>
       <p className="text-center text-sm text-muted-soft">

@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/db";
 import { approveHelperAction, rejectHelperAction } from "@/app/actions/admin";
 
+const DOC_LABELS: Record<string, string> = {
+  ID_DOCUMENT: "📎 View ID",
+  SELFIE: "🤳 View selfie",
+  POLICE_CLEARANCE: "🛡️ View clearance",
+  REFERENCE: "📇 View reference",
+};
+
 function initials(name: string): string {
   return name
     .trim()
@@ -14,7 +21,7 @@ export default async function VettingPage() {
   const [pending, recentApproved] = await Promise.all([
     prisma.helperProfile.findMany({
       where: { status: { in: ["PENDING", "IN_REVIEW"] } },
-      include: { user: true, areas: true },
+      include: { user: true, areas: true, documents: true },
       orderBy: { createdAt: "asc" },
     }),
     prisma.helperProfile.findMany({
@@ -59,7 +66,23 @@ export default async function VettingPage() {
                   </div>
                 </div>
 
-                <div className="text-[12.5px] text-muted">{docs || "No documents on file"}</div>
+                {p.documents.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {p.documents.map((d) => (
+                      <a
+                        key={d.id}
+                        href={`/api/helper-docs/${d.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border border-line-input bg-white px-2.5 py-1 text-[12px] font-semibold text-indigo-brand transition hover:bg-surface-lav"
+                      >
+                        {DOC_LABELS[d.type] ?? "📎 View document"}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-[12.5px] text-muted">{docs || "No documents on file"}</div>
+                )}
 
                 <div className={"text-[12.5px] font-semibold " + (p.backgroundCheckPassed ? "text-money" : "text-orange-brand")}>
                   {p.backgroundCheckPassed ? "Background check passed ✅" : "Awaiting checks ⏳"}

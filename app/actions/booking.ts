@@ -34,7 +34,7 @@ export async function advanceStatusAction(reference: string): Promise<void> {
 export async function createBookingAction(formData: FormData): Promise<BookingState> {
   const user = await assertRole("CUSTOMER");
   const ip = await clientIp();
-  if (!rateLimit(`booking:${user.id}:${ip}`, 30, 60 * 60 * 1000)) {
+  if (!(await rateLimit(`booking:${user.id}:${ip}`, 30, 60 * 60 * 1000))) {
     return { error: "Too many booking attempts. Please try again shortly." };
   }
 

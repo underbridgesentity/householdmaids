@@ -35,6 +35,23 @@ export function decrypt(payload: string): string {
   return Buffer.concat([decipher.update(Buffer.from(dataB64, "base64")), decipher.final()]).toString("utf8");
 }
 
+/** Encrypts binary data (e.g. uploaded ID/selfie images). Layout: iv|tag|ciphertext. */
+export function encryptBytes(plaintext: Buffer): Buffer {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", getKey(), iv);
+  const enc = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), enc]);
+}
+
+export function decryptBytes(payload: Buffer): Buffer {
+  const iv = payload.subarray(0, 12);
+  const tag = payload.subarray(12, 28);
+  const data = payload.subarray(28);
+  const decipher = crypto.createDecipheriv("aes-256-gcm", getKey(), iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(data), decipher.final()]);
+}
+
 /** Masks an account/ID number for display, e.g. "•••• 7781". */
 export function maskTail(value: string, tail = 4): string {
   const digits = value.replace(/\s+/g, "");

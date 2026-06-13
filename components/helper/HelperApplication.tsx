@@ -18,6 +18,8 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [idNumber, setIdNumber] = useState("");
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [areaIds, setAreaIds] = useState<string[]>([]);
   const [yearsExperience, setYearsExperience] = useState("");
   const [bank, setBank] = useState("");
@@ -34,7 +36,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
     <button onClick={back} className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</button>
   );
 
-  const step1Ready = fullName && email && phone && password.length >= 8 && idNumber;
+  const step1Ready = fullName && email && phone && password.length >= 8 && idNumber && idFile && selfieFile;
   const step2Ready = areaIds.length > 0 && yearsExperience !== "";
   const step3Ready = bank && accountNumber && accountType;
 
@@ -53,6 +55,8 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
     fd.set("accountNumber", accountNumber);
     fd.set("accountType", accountType);
     fd.set("clearanceConsent", "true");
+    if (idFile) fd.set("idDoc", idFile);
+    if (selfieFile) fd.set("selfie", selfieFile);
     try {
       const res = await submitHelperApplicationAction(fd);
       if (res?.error) {
@@ -105,18 +109,33 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
             <label className="label">ID number</label>
             <input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder="South African ID" className="field mb-4 bg-white" />
 
-            {/* Uploads are mocked in this build — these tiles are visual only. */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col items-center justify-center rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-surface-lav py-5 text-center">
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-surface-lav py-5 text-center">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => setIdFile(e.target.files?.[0] ?? null)}
+                />
                 <div className="text-[26px]">🪪</div>
                 <div className="mt-1 font-display text-[13px] font-bold">Upload ID</div>
-                <div className="mt-0.5 text-[11.5px] font-semibold text-money">✓ Uploaded</div>
-              </div>
-              <div className="flex flex-col items-center justify-center rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-surface-lav py-5 text-center">
+                <div className="mt-0.5 max-w-full truncate px-2 text-[11.5px] font-semibold text-money">
+                  {idFile ? `✓ ${idFile.name}` : "Tap to upload"}
+                </div>
+              </label>
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-surface-lav py-5 text-center">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)}
+                />
                 <div className="text-[26px]">🤳</div>
                 <div className="mt-1 font-display text-[13px] font-bold">Selfie</div>
-                <div className="mt-0.5 text-[11.5px] font-semibold text-money">✓ Uploaded</div>
-              </div>
+                <div className="mt-0.5 max-w-full truncate px-2 text-[11.5px] font-semibold text-money">
+                  {selfieFile ? `✓ ${selfieFile.name}` : "Tap to upload"}
+                </div>
+              </label>
             </div>
             <div className="h-4" />
           </div>

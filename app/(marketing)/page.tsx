@@ -296,6 +296,8 @@ export default async function LandingPage() {
                 <a href="#refer">Refer &amp; earn</a>
                 <Link href="/helper">Become a helper</Link>
                 <Link href="/login">Sign in</Link>
+                <Link href="/terms">Terms of Service</Link>
+                <Link href="/privacy">Privacy Policy</Link>
               </div>
             </div>
           </div>

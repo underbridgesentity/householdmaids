@@ -11,6 +11,17 @@ import { referralCodeFor } from "@/lib/reference";
 import { advanceBooking } from "@/lib/booking";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
+import { storeDocument } from "@/lib/storage";
+
+const MAX_DOC_BYTES = 8 * 1024 * 1024; // 8MB
+
+/** Returns the File if it's a present, valid (type + size) upload, else null. */
+function validDocFile(value: FormDataEntryValue | null): File | null | "invalid" {
+  if (!(value instanceof File) || value.size === 0) return null;
+  const okType = value.type.startsWith("image/") || value.type === "application/pdf";
+  if (!okType || value.size > MAX_DOC_BYTES) return "invalid";
+  return value;
+}
 
 export type HelperApplyState = { error?: string } | undefined;
 
@@ -21,7 +32,7 @@ export type HelperApplyState = { error?: string } | undefined;
  */
 export async function submitHelperApplicationAction(formData: FormData): Promise<HelperApplyState> {
   const ip = await clientIp();
-  if (!rateLimit(`helperapply:${ip}`, 5, 60 * 60 * 1000)) {
+  if (!(await rateLimit(`helperapply:${ip}`, 5, 60 * 60 * 1000))) {
     return { error: "Too many applications from this network. Please try again later." };
   }
   const parsed = helperApplicationSchema.safeParse({
@@ -31,6 +42,13 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
   if (!parsed.success) return { error: "Please check your application details and try again." };
   const input = parsed.data;
   const lower = input.email.toLowerCase();
+
+  // Validate uploaded documents BEFORE creating any records.
+  const idDoc = validDocFile(formData.get("idDoc"));
+  const selfie = validDocFile(formData.get("selfie"));
+  if (idDoc === "invalid" || selfie === "invalid") {
+    return { error: "Documents must be an image or PDF no larger than 8MB." };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email: lower } });
   if (existing) return { error: "An account with this email already exists. Try signing in instead." };
@@ -42,7 +60,7 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
     JSON.stringify({ bank: input.bank, accountNumber: input.accountNumber, type: input.accountType }),
   );
 
-  const userId = await prisma.$transaction(async (tx) => {
+  const { userId, profileId } = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         fullName: input.fullName,
@@ -55,23 +73,43 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
       },
     });
 
-    await tx.helperProfile.create({
+    const profile = await tx.helperProfile.create({
       data: {
         userId: user.id,
         idNumberEnc: encrypt(input.idNumber),
         yearsExperience: input.yearsExperience,
         status: "IN_REVIEW",
         bankAccountEnc: bankEnc,
-        idUploaded: true,
-        selfieUploaded: true,
+        idUploaded: !!idDoc,
+        selfieUploaded: !!selfie,
         referencesAdded: true,
         clearanceConsent: true,
         areas: { connect: input.areaIds.map((id) => ({ id })) },
       },
     });
 
-    return user.id;
+    return { userId: user.id, profileId: profile.id };
   });
+
+  // Encrypt + store the uploaded documents and link them to the profile.
+  try {
+    if (idDoc) {
+      const bytes = Buffer.from(await idDoc.arrayBuffer());
+      const { storageKey } = await storeDocument(profileId, idDoc.name, bytes);
+      await prisma.helperDocument.create({
+        data: { helperId: profileId, type: "ID_DOCUMENT", storageKey },
+      });
+    }
+    if (selfie) {
+      const bytes = Buffer.from(await selfie.arrayBuffer());
+      const { storageKey } = await storeDocument(profileId, selfie.name, bytes);
+      await prisma.helperDocument.create({
+        data: { helperId: profileId, type: "SELFIE", storageKey },
+      });
+    }
+  } catch {
+    return { error: "We couldn't save your documents. Please try again." };
+  }
 
   await audit({ actorId: userId, action: "helper.applied", entity: "HelperProfile", entityId: userId, meta: { email: lower } });
   redirect("/helper/submitted");

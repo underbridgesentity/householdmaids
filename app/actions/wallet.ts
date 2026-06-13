@@ -45,7 +45,7 @@ export async function saveBankAccountAction(formData: FormData): Promise<void> {
 export async function requestWithdrawalAction(_prev: WithdrawState, formData: FormData): Promise<WithdrawState> {
   const user = await assertRole("CUSTOMER", "HELPER");
   const ip = await clientIp();
-  if (!rateLimit(`withdraw:${user.id}:${ip}`, 10, 60 * 60 * 1000)) {
+  if (!(await rateLimit(`withdraw:${user.id}:${ip}`, 10, 60 * 60 * 1000))) {
     return { error: "Too many withdrawal requests. Please try again later." };
   }
   const parsed = withdrawSchema.safeParse(Object.fromEntries(formData));

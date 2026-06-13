@@ -110,6 +110,7 @@ model User {
   payouts        PayoutRequest[]
   notifications  Notification[]
   auditLogs      AuditLog[]
+  resetTokens    PasswordResetToken[]
 }
 
 model Address {
@@ -358,6 +359,18 @@ model Notification {
   body      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique // sha256 of the emailed token; raw token never stored
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model AuditLog {

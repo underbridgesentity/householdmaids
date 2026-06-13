@@ -1,5 +1,12 @@
+import fs from "fs";
 import { test } from "@playwright/test";
 import { login, logout, bookAndPay, expect } from "./helpers";
+
+// 1x1 transparent PNG for document-upload tests.
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
 
 test("marketing landing renders brand, services and contact details", async ({ page }) => {
   await page.goto("/");
@@ -134,6 +141,70 @@ test("responsive: mobile shows bottom tabs and hides the desktop sidebar", async
   await page.goto("/app");
   await expect(page.locator("nav.glass")).toBeVisible(); // bottom tab bar
   await expect(page.locator("aside")).toBeHidden(); // sidebar hidden on mobile
+});
+
+test("password reset: request a link, reset, and sign in with the new password", async ({ page }) => {
+  await page.goto("/forgot");
+  await page.locator('input[name="email"]').fill("thandi@email.co.za");
+  await page.getByRole("button", { name: "Send reset link" }).click();
+  await expect(page.getByText(/we've sent a reset link/i)).toBeVisible();
+
+  // The dev email sink logs the reset link to the dev-server console (/tmp/hhm-dev.log).
+  await page.waitForTimeout(800);
+  const log = fs.readFileSync("/tmp/hhm-dev.log", "utf8");
+  const matches = [...log.matchAll(/\/reset\/([a-f0-9]{64})/g)];
+  const token = matches.at(-1)?.[1];
+  expect(token, "reset token should be emailed").toBeTruthy();
+
+  await page.goto(`/reset/${token}`);
+  // reset to the same password so other tests still work
+  await page.locator('input[name="password"]').fill("Password123!");
+  await page.getByRole("button", { name: "Set new password" }).click();
+  await page.waitForURL("**/login?reset=1");
+  await expect(page.getByText(/password has been reset/i)).toBeVisible();
+  // confirm the new password works
+  await login(page, "thandi@email.co.za");
+  await expect(page).toHaveURL(/\/app/);
+});
+
+test("helper applies with real document uploads, and an admin can view them", async ({ page }) => {
+  const email = `helperdoc_${Date.now()}@test.co.za`;
+  await page.goto("/helper/apply");
+  // Step 1 — details + ID/selfie uploads
+  await page.getByPlaceholder("Thandi Mokoena").fill("Doc Test Helper");
+  await page.getByPlaceholder("you@email.com").fill(email);
+  await page.getByPlaceholder("082 000 0000").fill("+27 82 555 0000");
+  await page.getByPlaceholder("At least 8 characters").fill("Password123!");
+  await page.getByPlaceholder("South African ID").fill("9001015800086");
+  const fileInputs = page.locator('input[type="file"]');
+  await fileInputs.nth(0).setInputFiles({ name: "id.png", mimeType: "image/png", buffer: PNG });
+  await fileInputs.nth(1).setInputFiles({ name: "selfie.png", mimeType: "image/png", buffer: PNG });
+  await page.getByRole("button", { name: /Continue/ }).click();
+  // Step 2 — areas + experience
+  await page.getByRole("button", { name: "Sandton", exact: true }).click();
+  await page.getByPlaceholder("e.g. 4").fill("5");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  // Step 3 — banking
+  await page.getByPlaceholder("e.g. FNB").fill("FNB");
+  await page.getByPlaceholder("Account number").fill("62000000000");
+  await page.getByRole("button", { name: /Submit application/ }).click();
+  await page.waitForURL("**/helper/submitted", { timeout: 20_000 });
+
+  // Admin can see and open the uploaded document (RBAC-gated, decrypted stream)
+  await login(page, "admin@householdmaids.co.za");
+  await page.goto("/admin/vetting");
+  const docLink = page.locator('a[href^="/api/helper-docs/"]').first();
+  await expect(docLink).toBeVisible();
+  const href = await docLink.getAttribute("href");
+  const resp = await page.request.get(href!);
+  expect(resp.status()).toBe(200);
+  expect(resp.headers()["content-type"]).toContain("image");
+});
+
+test("helper documents are not accessible without an admin session", async ({ page }) => {
+  // A guessed/forged doc id must be forbidden for anonymous requests.
+  const resp = await page.request.get("/api/helper-docs/nonexistent-id");
+  expect([401, 403]).toContain(resp.status());
 });
 
 test("helper can open an assigned job", async ({ page }) => {

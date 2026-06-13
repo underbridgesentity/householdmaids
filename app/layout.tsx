@@ -6,10 +6,24 @@ const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700", "80
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-jakarta" });
 
 export const metadata: Metadata = {
-  title: "Household Maids — Cleaning services across Gauteng",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://householdmaids.vercel.app"),
+  title: {
+    default: "Household Maids — Cleaning services across Gauteng",
+    template: "%s · Household Maids",
+  },
   description:
     "Book trusted, vetted cleaners across Gauteng in under a minute — and earn cash every time a friend books with your referral link.",
   icons: { icon: "/brand/favicon.png" },
+  openGraph: {
+    title: "Household Maids — Cleaning services across Gauteng",
+    description:
+      "Book trusted, vetted cleaners across Gauteng in under a minute — and earn cash every time a friend books with your referral link.",
+    type: "website",
+    locale: "en_ZA",
+    siteName: "Household Maids",
+    images: [{ url: "/brand/logo.png", width: 800, height: 450, alt: "Household Maids" }],
+  },
+  twitter: { card: "summary_large_image", title: "Household Maids", description: "Cleaning services across Gauteng — rewarded." },
 };
 
 export const viewport: Viewport = {
