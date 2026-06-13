@@ -10,7 +10,7 @@ export function RateForm({ bookingId, helperName }: { bookingId: string; helperN
   const [tags, setTags] = useState<string[]>([]);
 
   return (
-    <form action={submitReviewAction} className="flex min-h-screen flex-col md:min-h-0 md:h-full">
+    <form action={submitReviewAction} className="flex min-h-screen flex-col lg:min-h-0">
       <input type="hidden" name="bookingId" value={bookingId} />
       <input type="hidden" name="stars" value={rating} />
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
@@ -40,7 +40,7 @@ export function RateForm({ bookingId, helperName }: { bookingId: string; helperN
         </div>
       </div>
 
-      <div className="border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
+      <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5 lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0">
         <button type="submit" className="btn-primary w-full">Submit review</button>
       </div>
     </form>

@@ -15,13 +15,15 @@ import { CUSTOMER_NAV, HELPER_NAV } from "./nav";
  *  - narrow  : keep focused flows (booking, payment, chat) centered on desktop
  */
 export async function AppShell({
-  children, variant = "customer", sidebar = true, tabs = true, narrow = false,
+  children, variant = "customer", sidebar = true, tabs = true, narrow = false, center = false,
 }: {
   children: React.ReactNode;
   variant?: "customer" | "helper";
   sidebar?: boolean;
   tabs?: boolean;
   narrow?: boolean;
+  /** Vertically center short content as a focused panel on desktop. */
+  center?: boolean;
 }) {
   const nav = variant === "helper" ? HELPER_NAV : CUSTOMER_NAV;
   const roleLabel = variant === "helper" ? "Helper" : "Customer";
@@ -34,7 +36,15 @@ export async function AppShell({
       )}
       <div className="flex min-h-[100dvh] w-full flex-1 flex-col">
         <main className="flex flex-1 flex-col">
-          <div className={`mx-auto flex w-full flex-1 flex-col ${narrow ? "lg:max-w-[640px]" : "lg:max-w-[1080px]"}`}>
+          <div
+            className={`mx-auto flex w-full flex-1 flex-col ${
+              center
+                ? "lg:max-w-[480px] lg:justify-center lg:py-10"
+                : narrow
+                  ? "lg:max-w-[640px]"
+                  : "lg:max-w-[1080px]"
+            }`}
+          >
             {children}
           </div>
         </main>

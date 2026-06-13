@@ -18,7 +18,7 @@ export default async function RatePage({ params }: { params: Promise<{ ref: stri
   if (booking.review) redirect(`/app/bookings/${booking.reference}`);
 
   return (
-    <AppShell tabs={false} narrow>
+    <AppShell tabs={false} narrow center>
       <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
         <Link href={`/app/bookings/${booking.reference}`} className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</Link>
         <div className="font-display text-xl font-extrabold">Rate your clean</div>

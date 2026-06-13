@@ -16,7 +16,7 @@ export function WithdrawForm({ availableCents }: { availableCents: number }) {
   );
 
   return (
-    <form action={action} className="flex min-h-screen flex-col md:min-h-0 md:h-full">
+    <form action={action} className="flex min-h-screen flex-col lg:min-h-0">
       <div className="flex-1 px-[18px]">
         {state?.error && (
           <div className="mb-3.5 rounded-2xl border border-[#f0d6d6] bg-[#fdf3f3] px-4 py-3 text-sm font-semibold text-[#d05656]">
@@ -58,7 +58,7 @@ export function WithdrawForm({ availableCents }: { availableCents: number }) {
         </div>
       </div>
 
-      <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
+      <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5 lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0">
         <button type="submit" disabled={pending || cents <= 0} className="btn-primary w-full disabled:opacity-50">
           {pending ? "Requesting…" : `Request ${formatZar(cents)} payout`}
         </button>
