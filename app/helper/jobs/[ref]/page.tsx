@@ -32,7 +32,7 @@ export default async function HelperJobPage({ params }: { params: Promise<{ ref:
     <AppShell variant="helper" tabs={false}>
       <div className="rounded-b-[26px] bg-brand-gradient-160 px-5 pb-6 pt-4">
         <div className="flex items-center gap-3">
-          <Link href="/helper/dashboard" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-lg text-white">‹</Link>
+          <Link href="/helper/dashboard" aria-label="Back to dashboard" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-lg text-white">‹</Link>
           <div>
             <div className="font-display text-[19px] font-extrabold text-white">{booking.service.name}</div>
             <div className="text-[12.5px] text-white/75">Ref {booking.reference} · {STATUS_LABELS[booking.status]}</div>

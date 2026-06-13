@@ -46,4 +46,11 @@ describe("payfast signature", () => {
     const signature = signPayfast(data, "passphrase");
     expect(verifyItnSignature({ ...data, amount: "5.00", signature }, "passphrase")).toBe(false);
   });
+
+  it("rejects a malformed (wrong-length) signature without throwing", async () => {
+    const { verifyItnSignature } = await import("@/lib/payfast");
+    const data: Record<string, string> = { merchant_id: "10000100", amount: "495.00", signature: "abc" };
+    expect(() => verifyItnSignature(data, "passphrase")).not.toThrow();
+    expect(verifyItnSignature(data, "passphrase")).toBe(false);
+  });
 });

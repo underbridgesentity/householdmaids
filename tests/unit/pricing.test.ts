@@ -25,10 +25,11 @@ describe("computePrice — rooms", () => {
     expect(p.subtotalCents).toBe(48000 + 17000);
   });
 
-  it("applies the weekly recurring discount (15%)", () => {
+  it("applies the weekly recurring discount (15%), rounded to a whole rand", () => {
     const p = computePrice({ service: roomsService, beds: 2, baths: 1, hours: 0, addonCents: [], recurrence: "WEEKLY", applyReferralDiscount: false, settings });
-    expect(p.recurringDiscountCents).toBe(Math.round(57000 * 0.15));
-    expect(p.totalCents).toBe(57000 - Math.round(57000 * 0.15));
+    // 15% of R570 = R85.50 → rounded to R86 so the charged total has no stray cents
+    expect(p.recurringDiscountCents).toBe(8600);
+    expect(p.totalCents).toBe(57000 - 8600);
   });
 
   it("applies the referral first-booking discount", () => {

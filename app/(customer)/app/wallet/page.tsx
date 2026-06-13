@@ -105,7 +105,7 @@ export default async function WalletPage() {
               </div>
               <div className="text-right">
                 <div className="font-display text-[14.5px] font-bold text-money">+{formatZar(r.status === "PENDING" ? settings.referrerRewardCents : r.rewardCents)}</div>
-                <div className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${r.status === "PENDING" ? "bg-[#fdf2e3] text-orange-deep" : "bg-[#e6f6ed] text-money"}`}>{r.status === "PENDING" ? "Pending" : "Paid"}</div>
+                <div className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${r.status === "PENDING" ? "bg-[#fdf2e3] text-orange-deep" : "bg-[#e6f6ed] text-money"}`}>{r.status === "PENDING" ? "Pending" : r.status === "PAID" ? "Paid out" : "Earned"}</div>
               </div>
             </div>
           ))}

@@ -138,10 +138,10 @@ export async function runFridayPayoutAction(): Promise<void> {
       let accountType = "";
       if (req.user.bankAccountEnc) {
         try {
-          const acct = JSON.parse(decrypt(req.user.bankAccountEnc)) as { bank: string; accountNumber: string; type: string };
+          const acct = JSON.parse(decrypt(req.user.bankAccountEnc)) as { bank: string; accountNumber: string; type?: string; accountType?: string };
           bank = acct.bank;
           accountNumber = acct.accountNumber;
-          accountType = acct.type;
+          accountType = acct.type ?? acct.accountType ?? "";
         } catch {
           /* fall through with empty details */
         }

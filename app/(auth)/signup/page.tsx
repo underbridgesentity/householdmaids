@@ -29,7 +29,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
       {/* Form */}
       <div className="flex items-center justify-center bg-surface px-6 py-10">
         <div className="w-full max-w-md">
-          <div className="mb-6 lg:hidden"><Logo height={44} /></div>
+          <div className="mb-6 lg:hidden"><Link href="/" aria-label="Household Maids home"><Logo height={44} /></Link></div>
           <h2 className="font-display text-[27px] font-extrabold tracking-tight">Create your account</h2>
           <p className="mb-6 mt-1 text-sm text-muted-soft">Book cleans, earn referral cash, all in one place.</p>
           <SignupForm presetCode={ref} />

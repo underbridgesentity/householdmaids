@@ -8,12 +8,11 @@ import { logoutAction } from "@/app/actions/auth";
 
 export const dynamic = "force-dynamic";
 
-const MENU = [
-  { icon: "📍", label: "Saved addresses", sub: "Home · Office", href: "#" },
-  { icon: "💳", label: "Payment methods", sub: "Visa •••• 4471", href: "#" },
-  { icon: "🏦", label: "Banking details", sub: "For referral payouts", href: "/app/withdraw/bank" },
+const MENU: { icon: string; label: string; sub: string; href: string; external?: boolean }[] = [
   { icon: "📄", label: "Booking history", sub: "View your cleans", href: "/app/profile/bookings" },
-  { icon: "⚙️", label: "Help & support", sub: "FAQ · WhatsApp us", href: "#" },
+  { icon: "💰", label: "Wallet & referrals", sub: "Earnings & payouts", href: "/app/wallet" },
+  { icon: "🏦", label: "Banking details", sub: "For referral payouts", href: "/app/withdraw/bank" },
+  { icon: "💬", label: "Help & support", sub: "Chat to us on WhatsApp", href: "https://wa.me/27620324931", external: true },
 ];
 
 export default async function ProfilePage() {
@@ -42,16 +41,27 @@ export default async function ProfilePage() {
 
       <div className="px-[18px] py-4">
         <div className="card overflow-hidden">
-          {MENU.map((m) => (
-            <Link key={m.label} href={m.href} className="flex items-center gap-3 border-b border-[#f3eff8] px-4 py-3.5 last:border-0">
-              <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] bg-surface-lav text-lg">{m.icon}</div>
-              <div className="flex-1">
-                <div className="font-display text-[14.5px] font-semibold">{m.label}</div>
-                <div className="text-xs text-muted-faint">{m.sub}</div>
-              </div>
-              <span className="text-lg text-[#cfc6dd]">›</span>
-            </Link>
-          ))}
+          {MENU.map((m) =>
+            m.external ? (
+              <a key={m.label} href={m.href} target="_blank" rel="noreferrer" className="flex items-center gap-3 border-b border-[#f3eff8] px-4 py-3.5 last:border-0">
+                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] bg-surface-lav text-lg">{m.icon}</div>
+                <div className="flex-1">
+                  <div className="font-display text-[14.5px] font-semibold">{m.label}</div>
+                  <div className="text-xs text-muted-faint">{m.sub}</div>
+                </div>
+                <span className="text-lg text-[#cfc6dd]" aria-hidden>›</span>
+              </a>
+            ) : (
+              <Link key={m.label} href={m.href} className="flex items-center gap-3 border-b border-[#f3eff8] px-4 py-3.5 last:border-0">
+                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] bg-surface-lav text-lg">{m.icon}</div>
+                <div className="flex-1">
+                  <div className="font-display text-[14.5px] font-semibold">{m.label}</div>
+                  <div className="text-xs text-muted-faint">{m.sub}</div>
+                </div>
+                <span className="text-lg text-[#cfc6dd]" aria-hidden>›</span>
+              </Link>
+            ),
+          )}
         </div>
 
         <Link href="/helper" className="mt-3.5 flex items-center gap-3 rounded-2xl border border-[#ecdcf0] bg-gradient-to-br from-[#f3ecfa] to-[#fbeef7] p-4">
@@ -63,7 +73,7 @@ export default async function ProfilePage() {
           <span className="text-lg text-magenta-brand">›</span>
         </Link>
 
-        <form action={logoutAction} className="mt-3.5">
+        <form action={logoutAction} className="mt-3.5 lg:hidden">
           <button className="w-full rounded-[14px] border-[1.5px] border-[#f0d6d6] bg-white py-3.5 font-display text-sm font-bold text-[#d05656]">Log out</button>
         </form>
       </div>

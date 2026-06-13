@@ -41,6 +41,7 @@ export function BookingWizard({
   const [recurrence, setRecurrence] = useState<Recurrence>("ONCE");
   const [applyReferral, setApplyReferral] = useState(referralEligible);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>();
 
   const service = services.find((s) => s.id === serviceId)!;
   const effectiveHours = Math.max(hours, service.mode === "HOURS" ? service.minHours : 0);
@@ -61,8 +62,9 @@ export function BookingWizard({
   const toggleAddon = (id: string) =>
     setAddonIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
-  function submit() {
+  async function submit() {
     setSubmitting(true);
+    setSubmitError(undefined);
     const fd = new FormData();
     fd.set("serviceId", serviceId);
     fd.set("areaId", areaId);
@@ -74,12 +76,22 @@ export function BookingWizard({
     fd.set("recurrence", recurrence);
     fd.set("scheduledAt", `${dateIso}T${time}:00`);
     fd.set("applyReferral", applyReferral ? "true" : "false");
-    createBookingAction(fd).catch(() => setSubmitting(false));
+    try {
+      const res = await createBookingAction(fd);
+      if (res?.error) {
+        setSubmitError(res.error);
+        setSubmitting(false);
+      }
+      // success path redirects server-side
+    } catch {
+      setSubmitError("Something went wrong. Please try again.");
+      setSubmitting(false);
+    }
   }
 
   const back = () => (step === 0 ? router.push("/app") : setStep((s) => s - 1));
   const BackBtn = () => (
-    <button onClick={back} className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</button>
+    <button onClick={back} aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</button>
   );
   const area = areas.find((a) => a.id === areaId);
   const dateLabel = dateOptions.find((d) => d.iso === dateIso);
@@ -284,6 +296,11 @@ export function BookingWizard({
             <div className="h-4" />
           </div>
           <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
+            {submitError && (
+              <div className="mb-3 rounded-2xl border border-[#f0d6d6] bg-[#fdf3f3] px-4 py-3 text-sm font-semibold text-[#d05656]">
+                {submitError}
+              </div>
+            )}
             <button disabled={submitting} onClick={submit} className="btn-primary w-full">
               {submitting ? "Preparing payment…" : "Continue to payment ›"}
             </button>
@@ -302,9 +319,9 @@ function Counter({ label, sub, value, onDec, onInc }: { label: string; sub: stri
         <div className="text-xs text-muted">{sub}</div>
       </div>
       <div className="flex items-center gap-3">
-        <button onClick={onDec} className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-[#e0d8ea] bg-white text-lg text-indigo-brand">−</button>
+        <button onClick={onDec} aria-label={`Decrease ${label.toLowerCase()}`} className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-[#e0d8ea] bg-white text-lg text-indigo-brand">−</button>
         <span className="w-[18px] text-center font-display text-[17px] font-bold">{value}</span>
-        <button onClick={onInc} className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-[#e0d8ea] bg-white text-lg text-indigo-brand">+</button>
+        <button onClick={onInc} aria-label={`Increase ${label.toLowerCase()}`} className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-[#e0d8ea] bg-white text-lg text-indigo-brand">+</button>
       </div>
     </div>
   );

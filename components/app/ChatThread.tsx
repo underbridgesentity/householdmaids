@@ -11,7 +11,7 @@ export function ChatThread({
   return (
     <div className="flex h-screen flex-col md:h-full">
       <div className="flex items-center gap-3 border-b border-line bg-white px-4 pb-3.5 pt-2">
-        <a href={backHref} className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-surface-lav text-lg text-indigo-brand">‹</a>
+        <a href={backHref} aria-label="Back" className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-surface-lav text-lg text-indigo-brand">‹</a>
         <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-gradient-to-br from-[#cdbce4] to-[#e6d4ef] font-display font-bold text-indigo-brand">{otherName[0]}</div>
         <div className="flex-1">
           <div className="font-display text-[15px] font-bold">{otherName}</div>
@@ -35,7 +35,7 @@ export function ChatThread({
       <form action={sendMessageAction} className="flex items-center gap-2.5 border-t border-line bg-white px-3.5 py-3">
         <input type="hidden" name="bookingId" value={bookingId} />
         <input name="body" required autoComplete="off" placeholder={`Message ${otherName.split(" ")[0]}…`} className="flex-1 rounded-full border-[1.5px] border-line-input bg-[#faf8fc] px-4 py-3 text-[14.5px] outline-none focus:border-magenta-brand" />
-        <button type="submit" className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient text-lg text-white">➤</button>
+        <button type="submit" aria-label="Send message" className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient text-lg text-white">➤</button>
       </form>
     </div>
   );

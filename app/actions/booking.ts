@@ -10,7 +10,10 @@ import { computePrice } from "@/lib/pricing";
 import { getSettings } from "@/lib/settings";
 import { bookingReference } from "@/lib/reference";
 import { markBookingPaid, advanceBooking } from "@/lib/booking";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
+
+export type BookingState = { error?: string } | undefined;
 
 export async function advanceStatusAction(reference: string): Promise<void> {
   // The booking's customer (demo control) or its assigned helper may advance it.
@@ -28,15 +31,19 @@ export async function advanceStatusAction(reference: string): Promise<void> {
  * Creates a booking. The server is the single source of truth for price —
  * it recomputes the total from trusted DB rates and ignores any client total.
  */
-export async function createBookingAction(formData: FormData): Promise<void> {
+export async function createBookingAction(formData: FormData): Promise<BookingState> {
   const user = await assertRole("CUSTOMER");
+  const ip = await clientIp();
+  if (!rateLimit(`booking:${user.id}:${ip}`, 30, 60 * 60 * 1000)) {
+    return { error: "Too many booking attempts. Please try again shortly." };
+  }
 
   const raw = {
     ...Object.fromEntries(formData),
     addonIds: formData.getAll("addonIds").map(String),
   };
   const parsed = bookingSchema.safeParse(raw);
-  if (!parsed.success) throw new Error("Invalid booking details");
+  if (!parsed.success) return { error: "Please review your booking details and try again." };
   const input = parsed.data;
 
   const [service, addons, area, settings, priorBookings, pendingReferral] = await Promise.all([
@@ -47,8 +54,8 @@ export async function createBookingAction(formData: FormData): Promise<void> {
     prisma.booking.count({ where: { customerId: user.id } }),
     prisma.referral.findUnique({ where: { refereeId: user.id } }),
   ]);
-  if (!service || !service.active) throw new Error("Service unavailable");
-  if (!area) throw new Error("Invalid area");
+  if (!service || !service.active) return { error: "That service is no longer available." };
+  if (!area) return { error: "Please choose a valid service area." };
 
   const isFirstBooking = priorBookings === 0;
   // Referral discount only on a genuine first booking with a pending referral.

@@ -47,9 +47,9 @@ export default async function LandingPage() {
               <Link href="/signup" className="rounded-2xl bg-orange-brand px-7 py-4 font-display text-base font-extrabold text-[#2A1A40] shadow-[0_18px_32px_-14px_rgba(242,150,14,.55)]">
                 Book a service
               </Link>
-              <Link href="/signup" className="rounded-2xl border-[1.5px] border-white/45 bg-white/10 px-6 py-4 font-display text-base font-bold text-white">
+              <a href="#refer" className="rounded-2xl border-[1.5px] border-white/45 bg-white/10 px-6 py-4 font-display text-base font-bold text-white">
                 Refer &amp; earn {reward}
-              </Link>
+              </a>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-5 text-[13.5px] font-semibold text-white/90">
               <span>🛡️ Vetted &amp; insured</span>
@@ -78,12 +78,12 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Stats — honest, launch-appropriate facts */}
       <section className="grid grid-cols-2 gap-px border-y border-line bg-line md:grid-cols-4">
-        {[["12k+", "Cleans completed"], [`${areas.length}`, "Gauteng areas"], ["4.9★", "Average rating"], ["R8.4k", "Paid in referrals"]].map(
+        {[[`${areas.length}`, "Gauteng areas"], ["100%", "Vetted & insured"], [reward, "Per referral"], ["Fri", "Weekly payouts"]].map(
           ([n, l], i) => (
             <div key={l} className="bg-white px-6 py-6 text-center">
-              <div className={`font-display text-[28px] font-extrabold ${i === 3 ? "text-magenta-brand" : "text-indigo-brand"}`}>{n}</div>
+              <div className={`font-display text-[28px] font-extrabold ${i === 2 ? "text-magenta-brand" : "text-indigo-brand"}`}>{n}</div>
               <div className="text-[13px] text-muted">{l}</div>
             </div>
           ),
@@ -213,9 +213,9 @@ export default async function LandingPage() {
         <h2 className="mb-8 text-center font-display text-[32px] font-extrabold tracking-tight">Loved across Gauteng</h2>
         <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            ["“Booking took a minute and the clean was immaculate. I’ve already earned R250 just from referring friends.”", "Thandi M.", "Sandton", "T", "#efe5f6", "#4A2C7C"],
+            ["“Booking took a minute and the clean was immaculate. I’ve already earned from referring friends.”", "Refilwe M.", "Sandton", "R", "#efe5f6", "#4A2C7C"],
             ["“My cleaner is reliable and friendly. The recurring discount makes it so easy to keep the place spotless.”", "Naledi K.", "Centurion", "N", "#fbe9f5", "#A22D8F"],
-            ["“As a helper I love the weekly payouts and choosing my own areas. Best platform I’ve worked with.”", "Lindiwe N.", "Cleaner · Midrand", "L", "#e8e8fb", "#4A56C7"],
+            ["“As a helper I love the weekly payouts and choosing my own areas. Best platform I’ve worked with.”", "Sipho M.", "Cleaner · Midrand", "S", "#e8e8fb", "#4A56C7"],
           ].map(([quote, name, place, initial, bg, col]) => (
             <div key={name} className="rounded-[18px] border border-line bg-white p-5">
               <div className="mb-2.5 text-base text-[#E8A33D]">★★★★★</div>

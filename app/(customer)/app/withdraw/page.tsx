@@ -16,7 +16,7 @@ export default async function WithdrawPage() {
     prisma.user.findUnique({ where: { id: user.id } }),
   ]);
   const bank = dbUser?.bankAccountEnc
-    ? (JSON.parse(decrypt(dbUser.bankAccountEnc)) as { bank: string; accountNumber: string; accountType: string })
+    ? (JSON.parse(decrypt(dbUser.bankAccountEnc)) as { bank: string; accountNumber: string; type?: string; accountType?: string })
     : null;
 
   return (

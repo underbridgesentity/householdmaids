@@ -113,7 +113,7 @@ function Header({ firstName, weekCents, rating }: { firstName: string; weekCents
   return (
     <div className="rounded-b-[26px] bg-brand-gradient-160 px-5 pb-6 pt-4">
       <div className="flex items-center gap-3">
-        <Link href="/" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-lg text-white">‹</Link>
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 font-display font-bold text-white">{firstName[0]}</div>
         <div>
           <div className="text-[12px] font-bold uppercase tracking-wide text-white/70">Helper · Vetted ✅</div>
           <div className="font-display text-[20px] font-extrabold text-white">Hi {firstName} 👋</div>
@@ -136,7 +136,7 @@ function Header({ firstName, weekCents, rating }: { firstName: string; weekCents
 
 function LogoutForm() {
   return (
-    <form action={logoutAction} className="mt-6">
+    <form action={logoutAction} className="mt-6 lg:hidden">
       <button className="w-full rounded-[15px] border-[1.5px] border-line-input bg-white py-3 text-[13.5px] font-semibold text-muted">
         Log out
       </button>

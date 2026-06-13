@@ -9,24 +9,31 @@ import { hashPassword } from "@/lib/password";
 import { encrypt } from "@/lib/crypto";
 import { referralCodeFor } from "@/lib/reference";
 import { advanceBooking } from "@/lib/booking";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
+
+export type HelperApplyState = { error?: string } | undefined;
 
 /**
  * Submits a helper application. Creates the HELPER user + an IN_REVIEW
  * HelperProfile in a single transaction, encrypting PII (ID number + bank)
  * at rest. Does NOT auto-login — the helper is told to wait for vetting.
  */
-export async function submitHelperApplicationAction(formData: FormData): Promise<void> {
+export async function submitHelperApplicationAction(formData: FormData): Promise<HelperApplyState> {
+  const ip = await clientIp();
+  if (!rateLimit(`helperapply:${ip}`, 5, 60 * 60 * 1000)) {
+    return { error: "Too many applications from this network. Please try again later." };
+  }
   const parsed = helperApplicationSchema.safeParse({
     ...Object.fromEntries(formData),
     areaIds: formData.getAll("areaIds").map(String),
   });
-  if (!parsed.success) throw new Error("Please check your application details.");
+  if (!parsed.success) return { error: "Please check your application details and try again." };
   const input = parsed.data;
   const lower = input.email.toLowerCase();
 
   const existing = await prisma.user.findUnique({ where: { email: lower } });
-  if (existing) throw new Error("An account with this email already exists.");
+  if (existing) return { error: "An account with this email already exists. Try signing in instead." };
 
   const passwordHash = await hashPassword(input.password);
   // Bank details are stored encrypted on BOTH the User (for payouts) and the

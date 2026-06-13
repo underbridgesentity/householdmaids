@@ -51,11 +51,14 @@ export function computePrice(input: PriceInput): PriceBreakdown {
   const addonsCents = input.addonCents.reduce((t, c) => t + c, 0);
   const subtotalCents = baseCents + addonsCents;
 
+  // Round the percentage discount to a whole rand so the displayed total always
+  // matches the amount actually charged (no stray cents from e.g. 15% of R570).
+  const roundToRand = (cents: number) => Math.round(cents / 100) * 100;
   let recurringDiscountCents = 0;
   if (input.recurrence === "WEEKLY") {
-    recurringDiscountCents = Math.round((subtotalCents * settings.weeklyDiscountPct) / 100);
+    recurringDiscountCents = roundToRand((subtotalCents * settings.weeklyDiscountPct) / 100);
   } else if (input.recurrence === "BIWEEKLY") {
-    recurringDiscountCents = Math.round((subtotalCents * settings.biweeklyDiscountPct) / 100);
+    recurringDiscountCents = roundToRand((subtotalCents * settings.biweeklyDiscountPct) / 100);
   }
 
   const referralDiscountCents = input.applyReferralDiscount

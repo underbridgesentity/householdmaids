@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -10,7 +11,7 @@ export default async function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface px-6 py-10">
       <div className="w-full max-w-md">
-        <div className="mb-7 flex justify-center"><Logo height={52} /></div>
+        <div className="mb-7 flex justify-center"><Link href="/" aria-label="Household Maids home"><Logo height={52} /></Link></div>
         <div className="card p-7 shadow-card">
           <h2 className="font-display text-[26px] font-extrabold tracking-tight">Welcome back</h2>
           <p className="mb-6 mt-1 text-sm text-muted-soft">Sign in to book cleans and manage your wallet.</p>

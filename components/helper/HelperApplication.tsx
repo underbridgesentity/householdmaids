@@ -11,6 +11,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string>();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,8 +38,9 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
   const step2Ready = areaIds.length > 0 && yearsExperience !== "";
   const step3Ready = bank && accountNumber && accountType;
 
-  function submit() {
+  async function submit() {
     setSubmitting(true);
+    setError(undefined);
     const fd = new FormData();
     fd.set("fullName", fullName);
     fd.set("email", email);
@@ -51,7 +53,17 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
     fd.set("accountNumber", accountNumber);
     fd.set("accountType", accountType);
     fd.set("clearanceConsent", "true");
-    submitHelperApplicationAction(fd).catch(() => setSubmitting(false));
+    try {
+      const res = await submitHelperApplicationAction(fd);
+      if (res?.error) {
+        setError(res.error);
+        setSubmitting(false);
+      }
+      // success path redirects server-side
+    } catch {
+      setError("Something went wrong submitting your application. Please try again.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -184,6 +196,11 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
             <div className="h-4" />
           </div>
           <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
+            {error && (
+              <div className="mb-3 rounded-2xl border border-[#f0d6d6] bg-[#fdf3f3] px-4 py-3 text-sm font-semibold text-[#d05656]">
+                {error}
+              </div>
+            )}
             <button disabled={submitting || !step3Ready} onClick={submit} className="btn-primary w-full disabled:opacity-50">
               {submitting ? "Submitting…" : "Submit application ›"}
             </button>

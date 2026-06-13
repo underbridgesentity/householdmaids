@@ -26,6 +26,8 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 export async function advanceBooking(reference: string): Promise<void> {
   const booking = await prisma.booking.findUnique({ where: { reference } });
   if (!booking) throw new Error("Not found");
+  // A booking only progresses (helper assignment, etc.) once it's actually paid.
+  if (booking.paymentStatus !== "PAID") return;
   const idx = STATUS_FLOW.indexOf(booking.status);
   if (idx < 0 || idx >= STATUS_FLOW.length - 1) return;
   const next = STATUS_FLOW[idx + 1];
@@ -54,18 +56,33 @@ export async function advanceBooking(reference: string): Promise<void> {
 async function scheduleNextRecurrence(reference: string): Promise<void> {
   const booking = await prisma.booking.findUnique({ where: { reference }, include: { addons: true } });
   if (!booking || booking.recurrence === "ONCE") return;
-  // Don't chain endlessly: only spawn if no later booking already exists.
+
   const offsetDays = booking.recurrence === "WEEKLY" ? 7 : 14;
   const nextDate = new Date(booking.scheduledAt);
   nextDate.setDate(nextDate.getDate() + offsetDays);
 
+  // Idempotency guard: don't spawn if a later booking in this recurring series
+  // already exists (e.g. completion handled twice).
+  const alreadyScheduled = await prisma.booking.findFirst({
+    where: {
+      customerId: booking.customerId,
+      serviceId: booking.serviceId,
+      recurrence: booking.recurrence,
+      scheduledAt: { gt: booking.scheduledAt },
+      status: { not: "CANCELLED" },
+    },
+  });
+  if (alreadyScheduled) return;
+
+  // The next occurrence starts fresh: no helper assigned yet (re-matched on its
+  // own HELPER_ASSIGNED step) and unpaid until the customer pays for it.
   await prisma.booking.create({
     data: {
       reference: bookingReference(),
       customerId: booking.customerId,
       serviceId: booking.serviceId,
       areaId: booking.areaId,
-      helperId: booking.helperId,
+      helperId: null,
       addressText: booking.addressText,
       beds: booking.beds,
       baths: booking.baths,

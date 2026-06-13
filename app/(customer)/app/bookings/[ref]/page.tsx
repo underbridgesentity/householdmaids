@@ -66,7 +66,7 @@ export default async function TrackPage({
             </div>
             <div className="mt-3.5 flex gap-2.5">
               <Link href={`/app/messages/${booking.reference}`} className="flex-1 rounded-[13px] border-[1.5px] border-[#e7d7ec] bg-surface-pink py-2.5 text-center font-display text-[13.5px] font-bold text-magenta-brand">💬 Message</Link>
-              <span className="flex-1 rounded-[13px] border-[1.5px] border-[#e0d8ea] bg-white py-2.5 text-center font-display text-[13.5px] font-bold text-indigo-brand">📞 Call</span>
+              <a href="tel:+27620324931" className="flex-1 rounded-[13px] border-[1.5px] border-[#e0d8ea] bg-white py-2.5 text-center font-display text-[13.5px] font-bold text-indigo-brand">📞 Call</a>
             </div>
           </div>
         ) : (

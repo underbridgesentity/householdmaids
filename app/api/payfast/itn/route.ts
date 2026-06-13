@@ -24,13 +24,21 @@ export async function POST(req: Request) {
     return new NextResponse("Invalid signature", { status: 400 });
   }
 
-  // 2. source host (skip in sandbox where it varies)
+  // 2. source host. Fail closed in production; only the sandbox (where the host
+  //    legitimately varies) skips this. Match the referer host exactly rather
+  //    than a spoofable substring. The authoritative check is still the
+  //    server-to-server validation in step 3.
   if (!cfg.sandbox) {
+    let refererHost = "";
+    try {
+      refererHost = new URL(req.headers.get("referer") ?? "").host;
+    } catch {
+      /* no/invalid referer */
+    }
     const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
-    const referer = req.headers.get("referer") ?? "";
-    const fromPayfast = PAYFAST_VALID_HOSTS.some((h) => referer.includes(h)) || PAYFAST_VALID_HOSTS.includes(host);
+    const fromPayfast = PAYFAST_VALID_HOSTS.includes(refererHost) || PAYFAST_VALID_HOSTS.includes(host);
     if (!fromPayfast) {
-      await audit({ action: "payfast.itn.rejected", entity: "Payment", meta: { reason: "bad_source" } });
+      await audit({ action: "payfast.itn.rejected", entity: "Payment", meta: { reason: "bad_source", refererHost } });
       return new NextResponse("Bad source", { status: 400 });
     }
   }

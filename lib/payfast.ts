@@ -93,7 +93,12 @@ export function verifyItnSignature(
   const received = data.signature;
   if (!received) return false;
   const computed = signPayfast(data, passphrase);
-  return crypto.timingSafeEqual(Buffer.from(received), Buffer.from(computed));
+  const a = Buffer.from(received);
+  const b = Buffer.from(computed);
+  // timingSafeEqual throws on length mismatch — guard so a malformed signature
+  // is rejected (false) rather than crashing the webhook.
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 /** Server-to-server confirmation that Payfast really sent this ITN. */
