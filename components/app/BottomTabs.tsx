@@ -2,24 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { type NavItem, isActive } from "./nav";
 
-const TABS = [
-  { label: "Home", icon: "🏠", href: "/app", match: (p: string) => p === "/app" },
-  { label: "Book", icon: "🧹", href: "/app/book", match: (p: string) => p.startsWith("/app/book") },
-  { label: "Wallet", icon: "💰", href: "/app/wallet", match: (p: string) => p.startsWith("/app/wallet") || p.startsWith("/app/withdraw") || p.startsWith("/app/payouts") },
-  { label: "Chat", icon: "💬", href: "/app/messages", match: (p: string) => p.startsWith("/app/messages") },
-  { label: "Profile", icon: "👤", href: "/app/profile", match: (p: string) => p.startsWith("/app/profile") },
-];
-
-export function BottomTabs() {
+/** Mobile/tablet bottom tab bar (hidden on desktop, where the sidebar takes over). */
+export function BottomTabs({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   return (
-    <nav className="glass sticky bottom-0 z-20 flex h-[72px] items-stretch border-x-0 border-b-0 border-t border-white/40 bg-white/70 px-1.5">
-      {TABS.map((t) => {
-        const active = t.match(pathname);
+    <nav className="glass sticky bottom-0 z-20 flex h-[72px] items-stretch border-x-0 border-b-0 border-t border-white/40 bg-white/70 px-1.5 lg:hidden">
+      {items.map((t) => {
+        const active = isActive(t, pathname);
         return (
           <Link
-            key={t.label}
+            key={t.href}
             href={t.href}
             className={`flex flex-1 flex-col items-center justify-center gap-0.5 pt-2 ${active ? "text-magenta-brand" : "text-muted-faint"}`}
           >

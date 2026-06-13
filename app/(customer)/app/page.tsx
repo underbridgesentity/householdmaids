@@ -90,7 +90,7 @@ export default async function HomePage() {
           <h3 className="font-display text-[17px] font-bold">Book a service</h3>
           <Link href="/app/book" className="text-[13px] font-bold text-magenta-brand">See all</Link>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {services.map((s) => (
             <Link key={s.id} href={`/app/book?service=${s.id}`} className="overflow-hidden rounded-[18px] border border-line bg-white shadow-card">
               <div className="relative h-24 w-full">

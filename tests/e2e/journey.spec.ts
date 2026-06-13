@@ -83,3 +83,66 @@ test("helper dashboard loads for an approved cleaner", async ({ page }) => {
   await page.goto("/helper/dashboard");
   await expect(page.getByText(/Vetted/)).toBeVisible();
 });
+
+test("admin can update reward settings and they persist (round-trip)", async ({ page }) => {
+  await login(page, "admin@householdmaids.co.za");
+  await page.goto("/admin/rewards");
+  const reward = page.locator('input[name="referrerRewardRands"]');
+  await expect(reward).toBeVisible();
+  const original = (await reward.inputValue()) || "50";
+
+  await reward.fill("55");
+  await page.getByRole("button", { name: /Save/ }).click();
+  await page.waitForLoadState("networkidle");
+  await page.goto("/admin/rewards");
+  await expect(page.locator('input[name="referrerRewardRands"]')).toHaveValue("55");
+
+  // restore the seeded value so other flows/screenshots are unaffected
+  await page.locator('input[name="referrerRewardRands"]').fill(original);
+  await page.getByRole("button", { name: /Save/ }).click();
+  await page.waitForLoadState("networkidle");
+});
+
+test("admin can reach every console section", async ({ page }) => {
+  await login(page, "admin@householdmaids.co.za");
+  for (const [path, heading] of [
+    ["/admin", "Dashboard"],
+    ["/admin/rewards", "Rewards & discounts"],
+    ["/admin/services", "Services & pricing"],
+    ["/admin/payouts", "Payouts queue"],
+    ["/admin/vetting", "Helper vetting"],
+  ] as const) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+  }
+});
+
+test("customer desktop sidebar navigates between sections", async ({ page }) => {
+  // Default viewport (1280) is desktop (lg) → sidebar visible, bottom tabs hidden.
+  await login(page, "thandi@email.co.za");
+  await page.goto("/app");
+  await expect(page.locator("aside").getByRole("link", { name: /Wallet/ })).toBeVisible();
+  await expect(page.locator("nav.glass")).toBeHidden(); // bottom tabs hidden on desktop
+  await page.locator("aside").getByRole("link", { name: /Wallet/ }).click();
+  await page.waitForURL("**/app/wallet");
+  await expect(page.getByText("Available to withdraw")).toBeVisible();
+});
+
+test("responsive: mobile shows bottom tabs and hides the desktop sidebar", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, "thandi@email.co.za");
+  await page.goto("/app");
+  await expect(page.locator("nav.glass")).toBeVisible(); // bottom tab bar
+  await expect(page.locator("aside")).toBeHidden(); // sidebar hidden on mobile
+});
+
+test("helper can open an assigned job", async ({ page }) => {
+  await login(page, "lindiwe@email.co.za");
+  await page.goto("/helper/dashboard");
+  const job = page.locator('a[href^="/helper/jobs/"]').first();
+  if ((await job.count()) > 0) {
+    await job.click();
+    await page.waitForURL("**/helper/jobs/**");
+    await expect(page.getByText(/Live status|Mark next step|Job completed|Message customer/).first()).toBeVisible();
+  }
+});

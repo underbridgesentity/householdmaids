@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function HelperApplyPage() {
   const areas = await prisma.area.findMany({ where: { active: true }, orderBy: { name: "asc" } });
   return (
-    <AppShell tabs={false}>
+    <AppShell sidebar={false} tabs={false} narrow>
       <HelperApplication areas={areas} />
     </AppShell>
   );

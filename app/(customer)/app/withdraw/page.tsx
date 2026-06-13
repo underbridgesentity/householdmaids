@@ -20,7 +20,7 @@ export default async function WithdrawPage() {
     : null;
 
   return (
-    <AppShell tabs={false}>
+    <AppShell tabs={false} narrow>
       <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
         <Link href="/app/wallet" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</Link>
         <div>

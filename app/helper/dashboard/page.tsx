@@ -20,7 +20,7 @@ export default async function HelperDashboardPage() {
   // Pending review state — no jobs surface until approved.
   if (!profile || profile.status !== "APPROVED") {
     return (
-      <AppShell tabs={false}>
+      <AppShell variant="helper" tabs={false}>
         <Header firstName={firstName} weekCents={0} rating={profile?.rating ?? 0} />
         <div className="px-[18px] py-5">
           <div className="card flex flex-col items-center p-6 text-center">
@@ -69,7 +69,7 @@ export default async function HelperDashboardPage() {
   const jobs = showUpcoming ? upcomingJobs : todayJobs;
 
   return (
-    <AppShell tabs={false}>
+    <AppShell variant="helper" tabs={false}>
       <Header firstName={firstName} weekCents={weekCents} rating={profile.rating} />
 
       <div className="px-[18px] py-5">

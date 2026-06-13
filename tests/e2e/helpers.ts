@@ -10,11 +10,13 @@ export async function login(page: Page, email: string, password = "Password123!"
 
 export async function logout(page: Page) {
   await page.goto("/app/profile").catch(() => {});
-  const btn = page.getByRole("button", { name: "Log out" });
-  if (await btn.isVisible().catch(() => false)) {
-    await btn.click();
-    await page.waitForURL("**/", { timeout: 20_000 }).catch(() => {});
-  }
+  // The desktop sidebar and the profile screen both render a "Log out" button —
+  // use .first() to avoid a strict-mode multiple-match error.
+  const btn = page.getByRole("button", { name: "Log out" }).first();
+  await btn.click().catch(() => {});
+  await page
+    .waitForURL((u) => !u.pathname.startsWith("/app") && !u.pathname.startsWith("/helper"), { timeout: 20_000 })
+    .catch(() => {});
 }
 
 /** Drives the booking wizard from /app/book through to the paid track page. */

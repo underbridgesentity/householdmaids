@@ -33,7 +33,7 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
   const isDev = process.env.NODE_ENV !== "production";
 
   return (
-    <AppShell tabs={false}>
+    <AppShell tabs={false} narrow>
       <div className="flex min-h-screen flex-col md:min-h-0 md:h-full">
         <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
           <Link href="/app/book" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</Link>

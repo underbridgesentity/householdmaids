@@ -34,7 +34,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   });
 
   return (
-    <AppShell tabs={false}>
+    <AppShell tabs={false} narrow>
       <BookingWizard
         services={services.map((s) => ({ id: s.id, name: s.name, emoji: s.emoji, tint: s.tint, description: s.description, mode: s.mode, basePrice: s.basePrice, hourlyRate: s.hourlyRate, minHours: s.minHours }))}
         addons={addons.map((a) => ({ id: a.id, name: a.name, emoji: a.emoji, price: a.price }))}

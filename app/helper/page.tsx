@@ -10,7 +10,7 @@ export default function HelperIntroPage() {
   ];
 
   return (
-    <AppShell tabs={false}>
+    <AppShell sidebar={false} tabs={false} narrow>
       <div className="flex min-h-screen flex-col bg-brand-gradient-160 text-white md:min-h-0 md:h-full">
         <div className="px-[18px] pt-4">
           <Link href="/" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-lg text-white">‹</Link>

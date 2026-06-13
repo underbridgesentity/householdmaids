@@ -10,7 +10,7 @@ export default function HelperSubmittedPage() {
   ];
 
   return (
-    <AppShell tabs={false}>
+    <AppShell sidebar={false} tabs={false} narrow>
       <div className="flex min-h-screen flex-col px-[18px] py-10 md:min-h-0 md:h-full">
         <div className="flex flex-1 flex-col items-center text-center">
           <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-brand-gradient text-[40px] text-white shadow-card">

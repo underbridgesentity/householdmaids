@@ -29,7 +29,7 @@ export default async function HelperJobPage({ params }: { params: Promise<{ ref:
   const detail = booking.service.mode === "ROOMS" ? `${booking.beds} bed · ${booking.baths} bath` : `${booking.hours} hours`;
 
   return (
-    <AppShell tabs={false}>
+    <AppShell variant="helper" tabs={false}>
       <div className="rounded-b-[26px] bg-brand-gradient-160 px-5 pb-6 pt-4">
         <div className="flex items-center gap-3">
           <Link href="/helper/dashboard" className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-lg text-white">‹</Link>

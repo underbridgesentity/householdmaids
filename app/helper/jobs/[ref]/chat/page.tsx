@@ -28,7 +28,7 @@ export default async function HelperChatPage({ params }: { params: Promise<{ ref
   }));
 
   return (
-    <AppShell tabs={false}>
+    <AppShell variant="helper" tabs={false} narrow>
       <ChatThread
         bookingId={booking.id}
         otherName={booking.customer.fullName}
