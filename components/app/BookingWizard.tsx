@@ -265,7 +265,7 @@ export function BookingWizard({
               {addons.map((a) => {
                 const sel = addonIds.includes(a.id);
                 return (
-                  <button key={a.id} onClick={() => toggleAddon(a.id)} className={`flex items-center gap-3 rounded-[15px] border-[1.5px] p-3.5 text-left ${sel ? "border-magenta-brand bg-surface-pink" : "border-line bg-white"}`}>
+                  <button key={a.id} onClick={() => toggleAddon(a.id)} aria-pressed={sel} className={`flex items-center gap-3 rounded-[15px] border-[1.5px] p-3.5 text-left ${sel ? "border-magenta-brand bg-surface-pink" : "border-line bg-white"}`}>
                     <div className="text-xl">{a.emoji}</div>
                     <div className="flex-1 font-display text-[14.5px] font-semibold">{a.name}</div>
                     <div className="text-[13px] font-semibold text-muted">+{formatZar(a.price)}</div>
@@ -296,7 +296,7 @@ export function BookingWizard({
             <div className="mb-3 px-0.5 font-display text-sm font-bold text-muted-label">Select your area</div>
             <div className="grid grid-cols-3 gap-2.5">
               {areas.map((a) => (
-                <button key={a.id} onClick={() => setAreaId(a.id)} className={`rounded-[13px] border-[1.5px] px-2 py-2.5 text-center text-[13.5px] font-bold ${a.id === areaId ? "border-magenta-brand bg-surface-pink text-magenta-brand" : "border-line-input bg-white text-[#5f5878]"}`}>{a.name}</button>
+                <button key={a.id} onClick={() => setAreaId(a.id)} aria-pressed={a.id === areaId} className={`rounded-[13px] border-[1.5px] px-2 py-2.5 text-center text-[13.5px] font-bold ${a.id === areaId ? "border-magenta-brand bg-surface-pink text-magenta-brand" : "border-line-input bg-white text-[#5f5878]"}`}>{a.name}</button>
               ))}
             </div>
           </div>
@@ -389,13 +389,13 @@ export function BookingWizard({
                 <div className="mb-1 font-display text-[15px] font-bold">Your details</div>
                 <div className="mb-3 text-[12.5px] text-muted">Create your account to confirm, or use your existing email &amp; password to sign in.</div>
                 <div className="flex flex-col gap-2.5">
-                  <input value={acctName} onChange={(e) => setAcctName(e.target.value)} placeholder="Full name" autoComplete="name" className="field bg-white" />
-                  <input value={acctEmail} onChange={(e) => setAcctEmail(e.target.value)} type="email" placeholder="Email" autoComplete="email" className="field bg-white" />
-                  <input value={acctPhone} onChange={(e) => setAcctPhone(e.target.value)} type="tel" placeholder="Mobile number (optional)" autoComplete="tel" className="field bg-white" />
-                  <input value={acctPassword} onChange={(e) => setAcctPassword(e.target.value)} type="password" placeholder="Create a password (min 8 chars)" autoComplete="new-password" className="field bg-white" />
+                  <input value={acctName} onChange={(e) => setAcctName(e.target.value)} aria-label="Full name" placeholder="Full name" autoComplete="name" className="field bg-white" />
+                  <input value={acctEmail} onChange={(e) => setAcctEmail(e.target.value)} type="email" aria-label="Email" placeholder="Email" autoComplete="email" className="field bg-white" />
+                  <input value={acctPhone} onChange={(e) => setAcctPhone(e.target.value)} type="tel" aria-label="Mobile number" placeholder="Mobile number (optional)" autoComplete="tel" className="field bg-white" />
+                  <input value={acctPassword} onChange={(e) => setAcctPassword(e.target.value)} type="password" aria-label="Create a password" placeholder="Create a password (min 8 chars)" autoComplete="new-password" className="field bg-white" />
                   <div className="flex items-center gap-2.5 rounded-2xl border border-dashed border-[#d9c8e6] bg-surface-lav px-3.5 py-2.5">
                     <span className="text-lg">🎟️</span>
-                    <input value={guestRef} onChange={(e) => setGuestRef(e.target.value)} placeholder="Referral code (optional)" className="w-full border-none bg-transparent text-[14px] font-bold uppercase tracking-wide text-magenta-brand outline-none placeholder:font-normal placeholder:normal-case placeholder:text-muted-faint" />
+                    <input value={guestRef} onChange={(e) => setGuestRef(e.target.value)} aria-label="Referral code" placeholder="Referral code (optional)" className="w-full border-none bg-transparent text-[14px] font-bold uppercase tracking-wide text-magenta-brand outline-none placeholder:font-normal placeholder:normal-case placeholder:text-muted-faint" />
                   </div>
                   {guestRef.trim() && <div className="text-[12px] font-semibold text-magenta-brand">🎉 {formatZar(settings.firstBookingDiscountCents)} first-booking discount applied</div>}
                 </div>

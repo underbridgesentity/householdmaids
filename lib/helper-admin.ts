@@ -3,11 +3,18 @@ import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { referralCodeFor } from "@/lib/reference";
 
-/** Readable one-time password an admin can share with a manually-loaded helper. */
+/**
+ * Readable one-time password an admin shares with a manually-loaded helper.
+ * Drawn from a large unambiguous alphabet (no 0/O/1/I/L) with real entropy:
+ * 3 blocks of 4 chars = 12 chars over a 31-char set (~59 bits).
+ */
 export function tempPassword(): string {
-  const part = () =>
-    crypto.randomBytes(4).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase();
-  return `HHM-${part()}-${part()}`;
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no easily-confused glyphs
+  const block = () => {
+    const bytes = crypto.randomBytes(4);
+    return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+  };
+  return `HHM-${block()}-${block()}`;
 }
 
 export interface NewHelperInput {

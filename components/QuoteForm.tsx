@@ -59,7 +59,7 @@ export function QuoteForm({
         </div>
         <div className="font-display text-xl font-extrabold">Quote request received</div>
         <p className="mt-2 text-[14px] text-muted">
-          Thanks {name.split(" ")[0]}. Your reference is{" "}
+          Thanks {name.trim().split(" ")[0]}. Your reference is{" "}
           <span className="font-bold text-indigo-brand">{reference}</span>. Our team will review the
           details and email you a tailored quote, usually within one business day.
         </p>
@@ -101,10 +101,10 @@ export function QuoteForm({
       )}
 
       <div className="card flex flex-col gap-2.5 p-4">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" autoComplete="name" className="field bg-white" />
-        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email" autoComplete="email" className="field bg-white" />
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="Mobile number (optional)" autoComplete="tel" className="field bg-white" />
-        <select value={areaId} onChange={(e) => setAreaId(e.target.value)} className="field bg-white text-[#3f3a57]">
+        <input value={name} onChange={(e) => setName(e.target.value)} aria-label="Full name" placeholder="Full name" autoComplete="name" className="field bg-white" />
+        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" aria-label="Email" placeholder="Email" autoComplete="email" className="field bg-white" />
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" aria-label="Mobile number" placeholder="Mobile number (optional)" autoComplete="tel" className="field bg-white" />
+        <select value={areaId} onChange={(e) => setAreaId(e.target.value)} aria-label="Service area" className="field bg-white text-[#3f3a57]">
           <option value="">Select your area (optional)</option>
           {areas.map((a) => (
             <option key={a.id} value={a.id}>{a.name}</option>
@@ -113,6 +113,7 @@ export function QuoteForm({
         <textarea
           value={details}
           onChange={(e) => setDetails(e.target.value)}
+          aria-label="Job details"
           placeholder="Tell us about the job, e.g. number of windows, floors, inside and outside, access and any special requirements."
           rows={5}
           className="field resize-none bg-white"
