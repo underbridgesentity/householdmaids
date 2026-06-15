@@ -6,34 +6,35 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { assertRole } from "@/lib/rbac";
 import { appendLedger } from "@/lib/wallet";
-import { withdrawSchema } from "@/lib/validation";
+import { withdrawSchema, bankDetailsSchema } from "@/lib/validation";
 import { payoutReference } from "@/lib/reference";
 import { encrypt, decrypt } from "@/lib/crypto";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
 
-const bankSchema = z.object({
-  bank: z.string().min(2).max(60),
-  accountNumber: z.string().min(4).max(30),
-  accountType: z.string().min(2).max(30),
-});
-
 export type WithdrawState = { error?: string } | undefined;
+export type BankState = { error?: string } | undefined;
 
-export async function saveBankAccountAction(formData: FormData): Promise<void> {
+export async function saveBankAccountAction(_prev: BankState, formData: FormData): Promise<BankState> {
   const user = await assertRole("CUSTOMER", "HELPER");
-  const parsed = bankSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) throw new Error("Invalid bank details");
+  const parsed = bankDetailsSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please check your banking details." };
   // Canonical bank blob shape: { bank, accountNumber, type }, matches the helper
-  // writer and the admin payout reader.
+  // writer and the admin payout reader. accountHolder is extra (ignored by them).
   await prisma.user.update({
     where: { id: user.id },
     data: {
       bankAccountEnc: encrypt(
-        JSON.stringify({ bank: parsed.data.bank, accountNumber: parsed.data.accountNumber, type: parsed.data.accountType }),
+        JSON.stringify({
+          bank: parsed.data.bank,
+          accountHolder: parsed.data.accountHolder,
+          accountNumber: parsed.data.accountNumber,
+          type: parsed.data.accountType,
+        }),
       ),
     },
   });
+  await audit({ actorId: user.id, action: "bank.updated", entity: "User", entityId: user.id });
   redirect("/app/withdraw");
 }
 

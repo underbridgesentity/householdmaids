@@ -60,6 +60,25 @@ export async function sendEmail(msg: EmailMessage): Promise<void> {
   }
 }
 
+/**
+ * Welcome email sent when a customer account is created (signup or guest
+ * checkout). Best-effort: callers should not block account creation on it.
+ */
+export async function sendWelcomeEmail(opts: { to: string; fullName: string }): Promise<void> {
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://householdmaids.vercel.app";
+  const first = opts.fullName.trim().split(" ")[0] || "there";
+  const text = [
+    `Hi ${first},`,
+    `Welcome to Household Maids! Your account is ready.`,
+    `You can now book trusted, vetted cleaners across Gauteng in under a minute, track your cleans, and earn R50 every time a friend books with your referral link.`,
+    `Book your first clean: ${base}/book`,
+    `Your wallet & referral link: ${base}/app/wallet`,
+    `Need a hand? Reply to this email or message us on WhatsApp at 062 032 4931.`,
+    `The Household Maids team`,
+  ].join("\n\n");
+  await sendEmail({ to: opts.to, subject: "Welcome to Household Maids", text });
+}
+
 function wrapHtml(text: string): string {
   return `<div style="font-family:system-ui,sans-serif;color:#201F4D;line-height:1.6">${text
     .split("\n")

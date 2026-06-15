@@ -11,7 +11,7 @@ import { signupSchema, loginSchema } from "@/lib/validation";
 import { referralCodeFor } from "@/lib/reference";
 import { homeFor } from "@/lib/rbac";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, sendWelcomeEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
 
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -117,6 +117,13 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
       });
     }
   });
+
+  // Welcome email is best-effort: never block sign-up on it.
+  try {
+    await sendWelcomeEmail({ to: lower, fullName });
+  } catch {
+    /* email delivery is non-critical */
+  }
 
   await signIn("credentials", { email: lower, password, redirectTo: "/app" });
   return undefined; // signIn redirects

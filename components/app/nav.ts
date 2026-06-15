@@ -13,7 +13,7 @@ export type NavItem = {
 
 export const CUSTOMER_NAV: NavItem[] = [
   { label: "Home", href: "/app", icon: Home, exact: true },
-  { label: "Book", href: "/book", icon: Sparkles },
+  { label: "Book", href: "/app/book", icon: Sparkles },
   { label: "Wallet", href: "/app/wallet", icon: Wallet, also: ["/app/withdraw", "/app/payouts"] },
   { label: "Messages", href: "/app/messages", icon: MessageCircle },
   { label: "Profile", href: "/app/profile", icon: User },

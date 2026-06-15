@@ -67,7 +67,7 @@ export default async function HomePage() {
             </div>
           </Link>
         ) : (
-          <Link href="/book" className="block card p-5 text-center shadow-card">
+          <Link href="/app/book" className="block card p-5 text-center shadow-card">
             <div className="text-3xl">🧹</div>
             <div className="mt-2 font-display font-bold">Book your first clean</div>
             <div className="text-[13px] text-muted">Trusted, vetted cleaners across Gauteng.</div>
@@ -88,11 +88,11 @@ export default async function HomePage() {
         {/* Services */}
         <div className="mb-3 mt-6 flex items-center justify-between px-0.5">
           <h3 className="font-display text-[17px] font-bold">Book a service</h3>
-          <Link href="/book" className="text-[13px] font-bold text-magenta-brand">See all</Link>
+          <Link href="/app/book" className="text-[13px] font-bold text-magenta-brand">See all</Link>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {services.map((s) => (
-            <Link key={s.id} href={`/book?service=${s.id}`} className="overflow-hidden rounded-[18px] border border-line bg-white shadow-card">
+            <Link key={s.id} href={`/app/book?service=${s.id}`} className="overflow-hidden rounded-[18px] border border-line bg-white shadow-card">
               <div className="relative h-24 w-full">
                 <Image src={servicePhoto(s.name)} alt={s.name} fill sizes="220px" className="object-cover" />
                 <div className="absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-[11px] text-lg shadow" style={{ background: s.tint }}>{s.emoji}</div>

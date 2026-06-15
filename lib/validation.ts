@@ -34,6 +34,25 @@ export const withdrawSchema = z.object({
   amountCents: z.coerce.number().int().min(1),
 });
 
+// Account self-service: customers/helpers editing their own details.
+export const profileSchema = z.object({
+  fullName: z.string().min(2, "Please enter your name").max(80),
+  email: z.string().email("Enter a valid email").max(120),
+  phone: z.string().max(20).optional().or(z.literal("")),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Enter your current password"),
+  newPassword: z.string().min(8, "Use at least 8 characters").max(100),
+});
+
+export const bankDetailsSchema = z.object({
+  bank: z.string().min(2, "Select your bank").max(60),
+  accountHolder: z.string().min(2, "Enter the account holder name").max(80),
+  accountNumber: z.string().regex(/^\d{4,20}$/, "Account number should be 4 to 20 digits"),
+  accountType: z.enum(["Cheque / Current", "Savings", "Transmission"]),
+});
+
 // Public quote request (spec-based services, e.g. commercial window cleaning).
 export const enquirySchema = z.object({
   serviceId: z.string().min(1),

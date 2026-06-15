@@ -26,11 +26,13 @@ const RECUR: { id: Recurrence; label: string; sub: string }[] = [
 
 export function BookingWizard({
   services, addons, areas, settings, dateOptions, referralEligible, referralCode, initialServiceId,
-  loggedIn, presetRef,
+  loggedIn, presetRef, embedded = false,
 }: {
   services: Service[]; addons: Addon[]; areas: Area[]; settings: Settings; dateOptions: DateOption[];
   referralEligible: boolean; referralCode?: string; initialServiceId?: string;
   loggedIn: boolean; presetRef?: string;
+  /** Rendered inside AppShell (sidebar stays): drop the standalone brand panel. */
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(initialServiceId ? 1 : 0);
@@ -133,8 +135,9 @@ export function BookingWizard({
   const showBaseLine = !isExtras || breakdown.baseCents > 0;
 
   return (
-    <div className="lg:grid lg:min-h-[100dvh] lg:grid-cols-[minmax(0,400px)_1fr]">
-      {/* Desktop-only brand panel with a live order summary */}
+    <div className={embedded ? "flex w-full flex-1 flex-col" : "lg:grid lg:min-h-[100dvh] lg:grid-cols-[minmax(0,400px)_1fr]"}>
+      {/* Desktop-only brand panel with a live order summary (standalone/guest only) */}
+      {!embedded && (
       <aside className="relative hidden overflow-hidden bg-hero-gradient p-9 text-white lg:flex lg:flex-col">
         <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/[.06]" />
         <Link href={loggedIn ? "/app" : "/"} className="relative z-10" aria-label="Household Maids home"><Logo variant="white" height={30} /></Link>
@@ -181,10 +184,11 @@ export function BookingWizard({
         </div>
         <div className="relative z-10 text-[12px] text-white/55">© 2026 Household Maids · Mukhoni Cleaning Specialists</div>
       </aside>
+      )}
 
       {/* Step content */}
-      <div className="flex min-h-screen flex-col bg-surface md:min-h-0 lg:min-h-[100dvh] lg:overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col lg:py-6">
+      <div className={embedded ? "flex w-full flex-1 flex-col" : "flex min-h-screen flex-col bg-surface md:min-h-0 lg:min-h-[100dvh] lg:overflow-y-auto"}>
+        <div className={embedded ? "mx-auto flex w-full max-w-[640px] flex-1 flex-col" : "mx-auto flex w-full max-w-[600px] flex-1 flex-col lg:py-6"}>
       {/* STEP 0, choose service */}
       {step === 0 && (
         <div className="flex-1">
@@ -353,7 +357,7 @@ export function BookingWizard({
             </div>
           </div>
           <div className="flex-1 px-[18px]">
-            <div className="mb-3.5 card p-4 lg:hidden">
+            <div className={`mb-3.5 card p-4 ${embedded ? "" : "lg:hidden"}`}>
               <div className="flex items-center gap-3 border-b border-[#f0ebf6] pb-3.5">
                 <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] bg-surface-lav text-[22px]">{service.emoji}</div>
                 <div className="flex-1">
@@ -399,7 +403,7 @@ export function BookingWizard({
               </div>
             )}
 
-            <div className="card p-4 lg:hidden">
+            <div className={`card p-4 ${embedded ? "" : "lg:hidden"}`}>
               {showBaseLine && <Line label={baseLabel} value={formatZar(breakdown.baseCents)} />}
               {breakdown.addonsCents > 0 && <Line label={addonsLabel} value={formatZar(breakdown.addonsCents)} />}
               {breakdown.recurringDiscountCents > 0 && <Line label="Recurring discount" value={`−${formatZar(breakdown.recurringDiscountCents)}`} money />}

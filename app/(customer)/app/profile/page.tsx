@@ -9,6 +9,7 @@ import { logoutAction } from "@/app/actions/auth";
 export const dynamic = "force-dynamic";
 
 const MENU: { icon: string; label: string; sub: string; href: string; external?: boolean }[] = [
+  { icon: "👤", label: "Account settings", sub: "Name, email & password", href: "/app/profile/settings" },
   { icon: "📄", label: "Booking history", sub: "View your cleans", href: "/app/profile/bookings" },
   { icon: "💰", label: "Wallet & referrals", sub: "Earnings & payouts", href: "/app/wallet" },
   { icon: "🏦", label: "Banking details", sub: "For referral payouts", href: "/app/withdraw/bank" },

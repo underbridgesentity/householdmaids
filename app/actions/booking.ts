@@ -14,6 +14,7 @@ import { getSettings } from "@/lib/settings";
 import { bookingReference, referralCodeFor } from "@/lib/reference";
 import { markBookingPaid, advanceBooking } from "@/lib/booking";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { sendWelcomeEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
 
 export type BookingState = { error?: string } | undefined;
@@ -96,6 +97,12 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
         return u;
       });
       customerId = created.id;
+      // Welcome email for the just-created guest account (best-effort).
+      try {
+        await sendWelcomeEmail({ to: lower, fullName });
+      } catch {
+        /* email delivery is non-critical */
+      }
     }
     signInCreds = { email: lower, password };
   }

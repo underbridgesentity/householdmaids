@@ -1,26 +1,38 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
+import { decrypt } from "@/lib/crypto";
 import { AppShell } from "@/components/app/AppShell";
-import { saveBankAccountAction } from "@/app/actions/wallet";
+import { BankForm } from "@/components/app/BankForm";
+
+export const dynamic = "force-dynamic";
+
+export const metadata = { title: "Banking details" };
 
 export default async function BankPage() {
-  await requireRole("CUSTOMER");
+  const session = await requireRole("CUSTOMER");
+  const dbUser = await prisma.user.findUnique({ where: { id: session.id }, select: { bankAccountEnc: true } });
+
+  let initial: { bank?: string; accountHolder?: string; accountNumber?: string; type?: string } | null = null;
+  if (dbUser?.bankAccountEnc) {
+    try {
+      const b = JSON.parse(decrypt(dbUser.bankAccountEnc)) as { bank?: string; accountHolder?: string; accountNumber?: string; type?: string; accountType?: string };
+      initial = { bank: b.bank, accountHolder: b.accountHolder, accountNumber: b.accountNumber, type: b.type ?? b.accountType };
+    } catch {
+      initial = null; // unreadable blob (e.g. key change) - let them re-enter
+    }
+  }
+
   return (
     <AppShell tabs={false} narrow center>
       <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
-        <Link href="/app/withdraw" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</Link>
-        <div className="font-display text-xl font-extrabold">Banking details</div>
-      </div>
-      <form action={saveBankAccountAction} className="flex flex-col gap-3.5 px-[18px]">
-        <input name="bank" required placeholder="Bank" className="field bg-white" />
-        <input name="accountNumber" required placeholder="Account number" className="field bg-white" />
-        <input name="accountType" required defaultValue="Cheque / Current" placeholder="Account type" className="field bg-white" />
-        <div className="flex gap-3 rounded-[14px] border border-[#cfe8d8] bg-[#eef6f0] px-4 py-3">
-          <span className="text-[17px]">🔒</span>
-          <span className="text-[12.5px] leading-snug text-money-dark">Your banking details are encrypted and used only for weekly payouts.</span>
+        <Link href="/app/withdraw" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand" aria-label="Back">‹</Link>
+        <div>
+          <div className="font-display text-xl font-extrabold">Banking details</div>
+          <div className="text-[12.5px] text-muted">Where we send your referral payouts</div>
         </div>
-        <button type="submit" className="btn-primary mt-1 w-full">Save banking details</button>
-      </form>
+      </div>
+      <BankForm initial={initial} />
     </AppShell>
   );
 }

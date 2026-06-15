@@ -15,6 +15,10 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const user = await getSessionUser();
   const loggedIn = user?.role === "CUSTOMER";
 
+  // Signed-in customers book inside the app shell (sidebar stays); only guests
+  // use this standalone full-screen flow.
+  if (loggedIn) redirect(service ? `/app/book?service=${service}` : "/app/book");
+
   const [services, addons, areas, settings] = await Promise.all([
     // Quote-only services (e.g. commercial window cleaning) are handled by the
     // /quote enquiry flow, not the instant-checkout wizard.
