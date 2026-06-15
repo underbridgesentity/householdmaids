@@ -65,9 +65,20 @@ export interface CheckoutParams {
   notifyUrl: string;
 }
 
+// Payfast text fields must be plain ASCII without '&' (which would split the
+// signature string). Strip anything outside printable ASCII and neutralise '&'.
+function pfText(value: string, max = 100): string {
+  return value
+    .replace(/&/g, "and")
+    .replace(/[^\x20-\x7E]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
 /** Builds the ordered field set (incl. signature) to POST to Payfast. */
 export function buildCheckoutFields(cfg: PayfastConfig, p: CheckoutParams): Record<string, string> {
-  const [firstName, ...rest] = p.name.trim().split(" ");
+  const [firstName, ...rest] = pfText(p.name, 100).split(" ");
   const fields: Record<string, string> = {
     merchant_id: cfg.merchantId,
     merchant_key: cfg.merchantKey,
@@ -79,7 +90,7 @@ export function buildCheckoutFields(cfg: PayfastConfig, p: CheckoutParams): Reco
     email_address: p.email,
     m_payment_id: p.mPaymentId,
     amount: (p.amountCents / 100).toFixed(2),
-    item_name: p.itemName,
+    item_name: pfText(p.itemName, 100) || "Household Maids booking",
   };
   fields.signature = signPayfast(fields, cfg.passphrase);
   return fields;

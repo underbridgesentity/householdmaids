@@ -20,7 +20,9 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
   const cfg = payfastConfig();
   const fields = buildCheckoutFields(cfg, {
     amountCents: booking.totalCents,
-    itemName: `Household Maids · ${booking.service.name}`,
+    // Payfast item_name must be plain ASCII: non-ASCII/special characters break
+    // their signature check ("variables not according to specification").
+    itemName: `Household Maids - ${booking.service.name}`,
     mPaymentId: booking.reference,
     email: user.email ?? "customer@example.com",
     name: user.name ?? "Customer",

@@ -357,7 +357,7 @@ export function BookingWizard({
             </div>
           </div>
           <div className="flex-1 px-[18px]">
-            <div className={`mb-3.5 card p-4 ${embedded ? "" : "lg:hidden"}`}>
+            <div className={`mb-3.5 card p-4 ${embedded || loggedIn ? "" : "lg:hidden"}`}>
               <div className="flex items-center gap-3 border-b border-[#f0ebf6] pb-3.5">
                 <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] bg-surface-lav text-[22px]">{service.emoji}</div>
                 <div className="flex-1">
@@ -403,7 +403,7 @@ export function BookingWizard({
               </div>
             )}
 
-            <div className={`card p-4 ${embedded ? "" : "lg:hidden"}`}>
+            <div className={`card p-4 ${embedded || loggedIn ? "" : "lg:hidden"}`}>
               {showBaseLine && <Line label={baseLabel} value={formatZar(breakdown.baseCents)} />}
               {breakdown.addonsCents > 0 && <Line label={addonsLabel} value={formatZar(breakdown.addonsCents)} />}
               {breakdown.recurringDiscountCents > 0 && <Line label="Recurring discount" value={`−${formatZar(breakdown.recurringDiscountCents)}`} money />}
