@@ -1,12 +1,13 @@
+import { Send } from "lucide-react";
 import { sendMessageAction } from "@/app/actions/booking";
 
 type Msg = { id: string; body: string; mine: boolean; time: string };
 
 /** Shared chat thread (customer + helper). Posts via a server action. */
 export function ChatThread({
-  bookingId, otherName, online, messages, backHref,
+  bookingId, otherName, messages, backHref,
 }: {
-  bookingId: string; otherName: string; online?: boolean; messages: Msg[]; backHref: string;
+  bookingId: string; otherName: string; messages: Msg[]; backHref: string;
 }) {
   return (
     <div className="flex h-screen flex-col md:h-full">
@@ -15,12 +16,11 @@ export function ChatThread({
         <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-gradient-to-br from-[#cdbce4] to-[#e6d4ef] font-display font-bold text-indigo-brand">{otherName[0]}</div>
         <div className="flex-1">
           <div className="font-display text-[15px] font-bold">{otherName}</div>
-          {online && <div className="text-[11.5px] text-money">● Online</div>}
+          <div className="text-[11.5px] text-muted-faint">Booking chat</div>
         </div>
       </div>
 
       <div className="hm-scroll flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-        <div className="text-center text-[11px] text-muted-faint">Today</div>
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.mine ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[76%] rounded-2xl px-3.5 py-2.5 text-sm leading-snug ${m.mine ? "rounded-br-md bg-brand-gradient text-white" : "rounded-bl-md bg-[#f1ecf7] text-ink"}`}>
@@ -35,7 +35,7 @@ export function ChatThread({
       <form action={sendMessageAction} className="flex items-center gap-2.5 border-t border-line bg-white px-3.5 py-3">
         <input type="hidden" name="bookingId" value={bookingId} />
         <input name="body" required autoComplete="off" placeholder={`Message ${otherName.split(" ")[0]}…`} className="flex-1 rounded-full border-[1.5px] border-line-input bg-[#faf8fc] px-4 py-3 text-[14.5px] outline-none focus:border-magenta-brand" />
-        <button type="submit" aria-label="Send message" className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient text-lg text-white">➤</button>
+        <button type="submit" aria-label="Send message" className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient text-white"><Send size={18} strokeWidth={2.2} /></button>
       </form>
     </div>
   );

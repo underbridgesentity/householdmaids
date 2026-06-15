@@ -32,7 +32,6 @@ export default async function HelperChatPage({ params }: { params: Promise<{ ref
       <ChatThread
         bookingId={booking.id}
         otherName={booking.customer.fullName}
-        online
         messages={messages}
         backHref={`/helper/jobs/${booking.reference}`}
       />

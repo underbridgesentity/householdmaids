@@ -264,7 +264,7 @@ export default async function LandingPage() {
           {([
             [Phone, "PHONE", "062 032 4931"],
             [Mail, "EMAIL", "info@householdmaids.co.za"],
-            [Clock, "HOURS", "Mon–Fri 08:00–16:00 · Weekends closed"],
+            [Clock, "HOURS", "Mon to Fri, 08:00 to 16:00 · Weekends closed"],
             [MapPin, "VISIT (KEMPTON PARK)", "70 Commissioner Rd, Office 7, Monument Corner Office Park"],
           ] as const).map(([Icon, label, value]) => (
             <div key={label} className="rounded-2xl border border-line bg-white p-5 text-center">
@@ -298,7 +298,7 @@ export default async function LandingPage() {
               <div className="flex flex-col gap-2 text-[13px] text-white/65">
                 <span>062 032 4931</span>
                 <span>info@householdmaids.co.za</span>
-                <span>Mon–Fri 08:00–16:00</span>
+                <span>Mon to Fri, 08:00 to 16:00</span>
               </div>
             </div>
             <div>

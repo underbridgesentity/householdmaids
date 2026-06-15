@@ -27,7 +27,6 @@ export default async function ChatPage({ params }: { params: Promise<{ ref: stri
       <ChatThread
         bookingId={booking.id}
         otherName={booking.helper?.user.fullName ?? "Your cleaner"}
-        online
         messages={messages}
         backHref={`/app/bookings/${booking.reference}`}
       />

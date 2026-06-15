@@ -27,6 +27,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
   const [bank, setBank] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountType, setAccountType] = useState("Cheque");
+  const [clearanceConsent, setClearanceConsent] = useState(false);
 
   const progress = [33, 66, 100][step];
 
@@ -39,7 +40,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
   );
 
   const step1Ready = fullName && email && phone && password.length >= 8 && idNumber && idFile && selfieFile;
-  const step2Ready = areaIds.length > 0 && yearsExperience !== "";
+  const step2Ready = areaIds.length > 0 && yearsExperience !== "" && clearanceConsent;
   const step3Ready = bank && accountNumber && accountType;
 
   async function submit() {
@@ -56,7 +57,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
     fd.set("bank", bank);
     fd.set("accountNumber", accountNumber);
     fd.set("accountType", accountType);
-    fd.set("clearanceConsent", "true");
+    fd.set("clearanceConsent", clearanceConsent ? "true" : "false");
     if (idFile) fd.set("idDoc", idFile);
     if (selfieFile) fd.set("selfie", selfieFile);
     try {
@@ -202,14 +203,20 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-3 rounded-[15px] border border-line bg-white p-3.5">
                 <div className="text-xl">📇</div>
-                <div className="flex-1 font-display text-[14.5px] font-semibold">2 references</div>
-                <div className="text-[13px] font-semibold text-money">✓ Added</div>
+                <div className="flex-1 font-display text-[13.5px] font-semibold text-muted">We&apos;ll request 2 contactable references after you apply.</div>
               </div>
-              <div className="flex items-center gap-3 rounded-[15px] border border-line bg-white p-3.5">
-                <div className="text-xl">🛡️</div>
-                <div className="flex-1 font-display text-[14.5px] font-semibold">Police clearance</div>
-                <div className="text-[13px] font-semibold text-money">✓ Signed</div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setClearanceConsent((v) => !v)}
+                aria-pressed={clearanceConsent}
+                className={`flex items-start gap-3 rounded-[15px] border-[1.5px] p-3.5 text-left ${clearanceConsent ? "border-magenta-brand bg-surface-pink" : "border-line bg-white"}`}
+              >
+                <div className={`mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-[1.5px] text-sm text-white ${clearanceConsent ? "border-magenta-brand bg-magenta-brand" : "border-[#d6cee2] bg-white"}`}>✓</div>
+                <div>
+                  <div className="font-display text-[14px] font-bold">Police clearance consent</div>
+                  <div className="text-[12.5px] text-muted">I consent to Household Maids running a police clearance / background check as part of vetting.</div>
+                </div>
+              </button>
             </div>
             <div className="h-4" />
           </div>
