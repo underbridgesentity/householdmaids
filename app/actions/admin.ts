@@ -1,13 +1,79 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { assertRole } from "@/lib/rbac";
 import { serviceUpsertSchema, settingsSchema } from "@/lib/validation";
 import { randsToCents } from "@/lib/money";
 import { decrypt } from "@/lib/crypto";
 import { getPayoutAdapter, type PayoutInstruction } from "@/lib/payout";
+import { createHelperAccount } from "@/lib/helper-admin";
 import { audit } from "@/lib/audit";
+
+// ---- Manually load helpers (admin) ----------------------------------------
+
+export type AddHelperState = { error?: string; created?: { email: string; tempPassword: string } } | undefined;
+
+const addHelperSchema = z.object({
+  fullName: z.string().min(2).max(80),
+  email: z.string().email().max(120),
+  phone: z.string().max(20).optional().or(z.literal("")),
+  yearsExperience: z.coerce.number().int().min(0).max(60).default(0),
+  approved: z.coerce.boolean().default(true),
+});
+
+export async function addHelperAction(_prev: AddHelperState, formData: FormData): Promise<AddHelperState> {
+  const admin = await assertRole("ADMIN");
+  const parsed = addHelperSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Please check the helper's details." };
+  const areaIds = formData.getAll("areaIds").map(String).filter(Boolean);
+  try {
+    const res = await createHelperAccount({ ...parsed.data, areaIds });
+    await audit({ actorId: admin.id, action: "helper.created.manual", entity: "HelperProfile", meta: { email: res.email } });
+    return { created: res };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not create helper." };
+  }
+}
+
+export type ImportHelpersState =
+  | { error?: string; results?: { email: string; tempPassword?: string; error?: string }[] }
+  | undefined;
+
+/** Bulk import from pasted CSV: fullName,email,phone,yearsExperience,areas(;-separated) */
+export async function importHelpersAction(_prev: ImportHelpersState, formData: FormData): Promise<ImportHelpersState> {
+  const admin = await assertRole("ADMIN");
+  const csv = String(formData.get("csv") ?? "").trim();
+  if (!csv) return { error: "Paste at least one CSV row." };
+
+  const areas = await prisma.area.findMany();
+  const areaByName = new Map(areas.map((a) => [a.name.toLowerCase(), a.id]));
+
+  let rows = csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (rows.length && /full\s*name|email/i.test(rows[0])) rows = rows.slice(1); // drop header
+
+  const results: { email: string; tempPassword?: string; error?: string }[] = [];
+  for (const line of rows.slice(0, 300)) {
+    const [fullName, email, phone, exp, areasStr] = line.split(",").map((s) => s?.trim() ?? "");
+    if (!fullName || !email) {
+      results.push({ email: email || line, error: "missing name or email" });
+      continue;
+    }
+    const areaIds = (areasStr ?? "")
+      .split(/[;|]/)
+      .map((s) => areaByName.get(s.trim().toLowerCase()))
+      .filter((x): x is string => !!x);
+    try {
+      const r = await createHelperAccount({ fullName, email, phone, yearsExperience: Number(exp) || 0, areaIds, approved: true });
+      results.push({ email: r.email, tempPassword: r.tempPassword });
+    } catch (e) {
+      results.push({ email, error: e instanceof Error ? e.message : "failed" });
+    }
+  }
+  await audit({ actorId: admin.id, action: "helper.imported.bulk", entity: "HelperProfile", meta: { count: results.filter((r) => r.tempPassword).length } });
+  return { results };
+}
 
 /**
  * Admin console mutations. Every action gates on ADMIN (defence in depth),
