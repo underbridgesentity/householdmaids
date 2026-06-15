@@ -9,6 +9,7 @@ import { computePrice, fromPriceCents, type Recurrence } from "@/lib/pricing";
 import { formatZar } from "@/lib/money";
 import { servicePhoto } from "@/lib/service-photos";
 import { Logo } from "@/components/ui/Logo";
+import { AddressAutocomplete } from "@/components/app/AddressAutocomplete";
 import { createBookingAction } from "@/app/actions/booking";
 
 type Service = { id: string; name: string; emoji: string; tint: string; description: string; mode: "ROOMS" | "HOURS" | "EXTRAS"; basePrice: number; hourlyRate: number; minHours: number };
@@ -288,7 +289,7 @@ export function BookingWizard({
             </div>
           </div>
           <div className="flex-1 px-[18px]">
-            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street address" className="field mb-4 bg-white" />
+            <div className="mb-4"><AddressAutocomplete value={address} onChange={setAddress} /></div>
             <div className="mb-3 px-0.5 font-display text-sm font-bold text-muted-label">Select your area</div>
             <div className="grid grid-cols-3 gap-2.5">
               {areas.map((a) => (
