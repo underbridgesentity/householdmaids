@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Sora, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { PWARegister } from "@/components/PWARegister";
 
 const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sora" });
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-jakarta" });
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
   },
   description:
     "Book trusted, vetted cleaners across Gauteng in under a minute, and earn cash every time a friend books with your referral link.",
-  icons: { icon: "/brand/favicon.png" },
+  icons: { icon: "/brand/favicon.png", apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Household Maids" },
   openGraph: {
     title: "Household Maids, Cleaning services across Gauteng",
     description:
@@ -35,7 +37,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${sora.variable} ${jakarta.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PWARegister />
+      </body>
     </html>
   );
 }
