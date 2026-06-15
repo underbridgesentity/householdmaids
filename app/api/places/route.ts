@@ -29,10 +29,15 @@ export async function GET(request: Request) {
 
   try {
     const res = await fetch(url, { cache: "no-store" });
-    const data = (await res.json()) as { predictions?: { description: string; place_id: string }[]; status?: string };
+    const data = (await res.json()) as { predictions?: { description: string; place_id: string }[]; status?: string; error_message?: string };
+    // Surface Google's status server-side (never to the client) for diagnosis.
+    if (data.status && data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+      console.error(`[places] Google status=${data.status} msg=${data.error_message ?? ""}`);
+    }
     const predictions = (data.predictions ?? []).slice(0, 6).map((p) => ({ description: p.description, placeId: p.place_id }));
     return NextResponse.json({ predictions });
-  } catch {
+  } catch (e) {
+    console.error("[places] fetch error", (e as Error).message);
     return NextResponse.json({ predictions: [] });
   }
 }
