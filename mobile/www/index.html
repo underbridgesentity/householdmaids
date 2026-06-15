@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Household Maids</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #4A2C7C; color: #fff;
+        font-family: system-ui, -apple-system, sans-serif; }
+      .wrap { height: 100%; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; text-align: center; padding: 24px; }
+      h1 { font-size: 22px; font-weight: 800; margin: 16px 0 6px; }
+      p { opacity: .8; font-size: 14px; max-width: 280px; }
+      .spin { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.3);
+        border-top-color: #fff; border-radius: 50%; animation: s 1s linear infinite; margin-top: 18px; }
+      @keyframes s { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <!-- Fallback shown only if the live site can't be reached at launch. -->
+    <div class="wrap">
+      <h1>Household Maids</h1>
+      <p>Connecting… please check your internet connection.</p>
+      <div class="spin"></div>
+    </div>
+  </body>
+</html>
