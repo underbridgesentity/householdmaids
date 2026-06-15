@@ -158,88 +158,101 @@ export async function toggleServiceActiveAction(id: string): Promise<void> {
 
 export async function deleteServiceAction(id: string): Promise<void> {
   const admin = await assertRole("ADMIN");
-  try {
+  // A service referenced by bookings or enquiries can't be hard-deleted (FK), so
+  // deactivate it instead. Check dependents explicitly rather than swallowing
+  // every error as "has bookings" (which would hide real DB failures).
+  const [bookings, enquiries] = await Promise.all([
+    prisma.booking.count({ where: { serviceId: id } }),
+    prisma.enquiry.count({ where: { serviceId: id } }),
+  ]);
+  if (bookings > 0 || enquiries > 0) {
+    await prisma.service.update({ where: { id }, data: { active: false } });
+    await audit({ actorId: admin.id, action: "service.deactivated", entity: "Service", entityId: id, meta: { reason: "has-dependents", bookings, enquiries } });
+  } else {
     await prisma.service.delete({ where: { id } });
     await audit({ actorId: admin.id, action: "service.deleted", entity: "Service", entityId: id });
-  } catch {
-    // A service with bookings cannot be deleted (FK constraint), deactivate instead.
-    await prisma.service.update({ where: { id }, data: { active: false } });
-    await audit({ actorId: admin.id, action: "service.deactivated", entity: "Service", entityId: id, meta: { reason: "has-bookings" } });
   }
   redirect("/admin/services");
 }
 
 export async function approveHelperAction(profileId: string): Promise<void> {
   const admin = await assertRole("ADMIN");
-  await prisma.helperProfile.update({
-    where: { id: profileId },
+  // Only approve a helper still under review. Guards against a stale/duplicate
+  // submit flipping a REJECTED helper back to APPROVED (which would also
+  // re-stamp backgroundCheckPassed and feed them into live job assignment).
+  const res = await prisma.helperProfile.updateMany({
+    where: { id: profileId, status: { in: ["PENDING", "IN_REVIEW"] } },
     data: { status: "APPROVED", backgroundCheckPassed: true },
   });
-  await audit({ actorId: admin.id, action: "helper.approved", entity: "HelperProfile", entityId: profileId });
+  if (res.count > 0) {
+    await audit({ actorId: admin.id, action: "helper.approved", entity: "HelperProfile", entityId: profileId });
+  }
   redirect("/admin/vetting");
 }
 
 export async function rejectHelperAction(profileId: string): Promise<void> {
   const admin = await assertRole("ADMIN");
-  await prisma.helperProfile.update({ where: { id: profileId }, data: { status: "REJECTED" } });
-  await audit({ actorId: admin.id, action: "helper.rejected", entity: "HelperProfile", entityId: profileId });
+  // Reject only from a non-rejected state (allows revoking an approved helper).
+  const res = await prisma.helperProfile.updateMany({
+    where: { id: profileId, status: { in: ["PENDING", "IN_REVIEW", "APPROVED"] } },
+    data: { status: "REJECTED" },
+  });
+  if (res.count > 0) {
+    await audit({ actorId: admin.id, action: "helper.rejected", entity: "HelperProfile", entityId: profileId });
+  }
   redirect("/admin/vetting");
 }
 
 export async function runFridayPayoutAction(): Promise<void> {
   const admin = await assertRole("ADMIN");
 
-  const { batchRef, total, count } = await prisma.$transaction(async (tx) => {
-    const requests = await tx.payoutRequest.findMany({
-      where: { status: "REQUESTED" },
-      include: { user: true },
-    });
-
-    const label = new Date().toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" });
+  // 1. Atomically CLAIM all REQUESTED payouts into a new cycle. Scoping the
+  //    update to status REQUESTED means a concurrent/double run can't grab the
+  //    same rows (the second claim returns count 0).
+  const label = new Date().toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" });
+  const { cycleId, claimed } = await prisma.$transaction(async (tx) => {
     const cycle = await tx.payoutCycle.create({ data: { label, runAt: new Date() } });
-
-    const instructions: PayoutInstruction[] = [];
-    for (const req of requests) {
-      // Decrypt the full account number for the bank batch; snapshot only holds the tail.
-      let bank = "";
-      let accountNumber = "";
-      let accountType = "";
-      if (req.user.bankAccountEnc) {
-        try {
-          const acct = JSON.parse(decrypt(req.user.bankAccountEnc)) as { bank: string; accountNumber: string; type?: string; accountType?: string };
-          bank = acct.bank;
-          accountNumber = acct.accountNumber;
-          accountType = acct.type ?? acct.accountType ?? "";
-        } catch {
-          /* fall through with empty details */
-        }
-      }
-      instructions.push({
-        reference: req.reference,
-        beneficiaryName: req.user.fullName,
-        bank,
-        accountNumber,
-        accountType,
-        amountCents: req.amountCents,
-      });
-    }
-
-    await tx.payoutRequest.updateMany({
-      where: { id: { in: requests.map((r) => r.id) } },
+    const res = await tx.payoutRequest.updateMany({
+      where: { status: "REQUESTED" },
       data: { status: "PROCESSING", cycleId: cycle.id },
     });
-    await tx.payoutRequest.updateMany({
-      where: { id: { in: requests.map((r) => r.id) } },
-      data: { status: "PAID", paidAt: new Date() },
-    });
-
-    const result = await getPayoutAdapter().process(instructions);
-    const total = instructions.reduce((t, i) => t + i.amountCents, 0);
-    return { batchRef: result.batchRef, total, count: instructions.length };
+    return { cycleId: cycle.id, claimed: res.count };
   });
 
-  await audit({ actorId: admin.id, action: "payout.fridayRun", entity: "PayoutCycle", meta: { batchRef, totalCents: total, count } });
-  redirect("/admin/payouts?ran=1");
+  if (claimed === 0) {
+    redirect("/admin/payouts?ran=0"); // nothing to pay out
+  }
+
+  // 2. Build bank instructions from the rows WE claimed (decrypt full acct #).
+  const requests = await prisma.payoutRequest.findMany({
+    where: { cycleId, status: "PROCESSING" },
+    include: { user: true },
+  });
+  const instructions: PayoutInstruction[] = requests.map((req) => {
+    let bank = "", accountNumber = "", accountType = "";
+    if (req.user.bankAccountEnc) {
+      try {
+        const acct = JSON.parse(decrypt(req.user.bankAccountEnc)) as { bank: string; accountNumber: string; type?: string; accountType?: string };
+        bank = acct.bank; accountNumber = acct.accountNumber; accountType = acct.type ?? acct.accountType ?? "";
+      } catch { /* empty details */ }
+    }
+    return { reference: req.reference, beneficiaryName: req.user.fullName, bank, accountNumber, accountType, amountCents: req.amountCents };
+  });
+
+  // 3. Run the external money movement OUTSIDE any DB transaction, so a DB
+  //    failure can't roll back work the bank already accepted.
+  const { batchRef } = await getPayoutAdapter().process(instructions);
+  const total = instructions.reduce((t, i) => t + i.amountCents, 0);
+
+  // 4. Mark the claimed rows PAID (the batch CSV is regenerated on demand from
+  //    this cycle's rows by the download route, so nothing extra to persist).
+  await prisma.payoutRequest.updateMany({
+    where: { cycleId, status: "PROCESSING" },
+    data: { status: "PAID", paidAt: new Date() },
+  });
+
+  await audit({ actorId: admin.id, action: "payout.fridayRun", entity: "PayoutCycle", entityId: cycleId, meta: { batchRef, totalCents: total, count: instructions.length } });
+  redirect(`/admin/payouts?ran=1&cycle=${cycleId}`);
 }
 
 export async function approvePayoutAction(id: string): Promise<void> {

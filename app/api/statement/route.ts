@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/rbac";
+import { csvSafe } from "@/lib/payout";
 
 /** Streams the signed-in user's wallet statement as CSV. */
 export async function GET() {
@@ -16,11 +17,11 @@ export async function GET() {
     [
       new Date(t.createdAt).toISOString().slice(0, 10),
       t.type,
-      `"${(t.ref ?? "").replace(/"/g, '""')}"`,
+      t.ref ?? "",
       (t.amountCents / 100).toFixed(2),
       t.status,
       (t.balanceAfter / 100).toFixed(2),
-    ].join(","),
+    ].map(csvSafe).join(","),
   );
   const csv = [header, ...rows].join("\n");
 

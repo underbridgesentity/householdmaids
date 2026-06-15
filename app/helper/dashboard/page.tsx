@@ -27,7 +27,7 @@ export default async function HelperDashboardPage() {
             <div className="text-[40px]">🕵️</div>
             <div className="mt-3 font-display text-[16px] font-bold">Your application is under review</div>
             <p className="mt-2 text-[13px] leading-relaxed text-muted">
-              Our vetting team is checking your details. We&apos;ll let you know the moment you&apos;re approved -               usually within 2–3 working days.
+              Our vetting team is checking your details. We&apos;ll let you know the moment you&apos;re approved, usually within 2 to 3 working days.
             </p>
           </div>
           <LogoutForm />

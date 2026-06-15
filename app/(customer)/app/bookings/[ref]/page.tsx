@@ -27,6 +27,7 @@ export default async function TrackPage({
 
   const idx = STATUS_FLOW.indexOf(booking.status);
   const isCompleted = booking.status === "COMPLETED";
+  const isDev = process.env.NODE_ENV !== "production";
   const advance = advanceStatusAction.bind(null, booking.reference);
 
   return (
@@ -101,11 +102,11 @@ export default async function TrackPage({
           ) : (
             <Link href={`/app/rate/${booking.reference}`} className="btn-primary mt-4 w-full">Rate your clean ⭐</Link>
           )
-        ) : (
+        ) : isDev ? (
           <form action={advance} className="mt-4">
             <button className="w-full rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-white py-3 text-[13px] font-semibold text-muted">▶ Demo: advance status</button>
           </form>
-        )}
+        ) : null}
         <div className="h-4" />
       </div>
     </AppShell>

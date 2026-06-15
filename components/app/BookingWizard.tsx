@@ -93,7 +93,9 @@ export function BookingWizard({
     fd.set("hours", String(effectiveHours));
     addonIds.forEach((id) => fd.append("addonIds", id));
     fd.set("recurrence", recurrence);
-    fd.set("scheduledAt", `${dateIso}T${time}:00`);
+    // Stamp the South African offset so the booked time is the time the
+    // customer picked, regardless of the (UTC) server's local zone.
+    fd.set("scheduledAt", `${dateIso}T${time}:00+02:00`);
     fd.set("applyReferral", applyReferral ? "true" : "false");
     if (!loggedIn) {
       fd.set("fullName", acctName);
@@ -289,7 +291,8 @@ export function BookingWizard({
             </div>
           </div>
           <div className="flex-1 px-[18px]">
-            <div className="mb-4"><AddressAutocomplete value={address} onChange={setAddress} /></div>
+            <label className="mb-1.5 block px-0.5 font-display text-sm font-bold text-muted-label">Street address</label>
+            <div className="mb-4"><AddressAutocomplete value={address} onChange={setAddress} placeholder="Start typing your address" /></div>
             <div className="mb-3 px-0.5 font-display text-sm font-bold text-muted-label">Select your area</div>
             <div className="grid grid-cols-3 gap-2.5">
               {areas.map((a) => (
@@ -297,7 +300,7 @@ export function BookingWizard({
               ))}
             </div>
           </div>
-          <FooterButton onClick={() => setStep(3)} label="Continue to schedule ›" />
+          <FooterButton onClick={() => setStep(3)} label="Continue to schedule ›" disabled={address.trim().length < 5} hint={address.trim().length < 5 ? "Enter your street address to continue" : undefined} />
         </>
       )}
 
@@ -468,10 +471,11 @@ function FooterTotal({ total, onClick, label, disabled, hint }: { total: number;
   );
 }
 
-function FooterButton({ onClick, label }: { onClick: () => void; label: string }) {
+function FooterButton({ onClick, label, disabled, hint }: { onClick: () => void; label: string; disabled?: boolean; hint?: string }) {
   return (
     <div className="mt-auto border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
-      <button onClick={onClick} className="btn-primary w-full">{label}</button>
+      {disabled && hint && <div className="mb-2 text-center text-[12px] font-semibold text-muted-faint">{hint}</div>}
+      <button onClick={onClick} disabled={disabled} className="btn-primary w-full disabled:opacity-50">{label}</button>
     </div>
   );
 }

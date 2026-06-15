@@ -53,10 +53,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.name = user.name;
+        token.email = user.email;
+        return token;
+      }
+      // On every subsequent request, re-validate identity against the DB so a
+      // role change, rejection, or account deletion takes effect immediately
+      // (not only when the token expires), and name/email stay fresh (e.g. the
+      // Pay page must send Payfast the current email after a profile edit).
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, fullName: true, email: true },
+        });
+        if (!dbUser) return null; // user no longer exists -> invalidate session
+        token.role = dbUser.role;
+        token.name = dbUser.fullName;
+        token.email = dbUser.email;
       }
       return token;
     },
@@ -64,6 +81,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
+        if (token.name) session.user.name = token.name as string;
+        if (token.email) session.user.email = token.email as string;
       }
       return session;
     },

@@ -26,12 +26,12 @@ export const bankBatchAdapter: PayoutAdapter = {
     const rows = instructions.map((i) =>
       [
         i.reference,
-        csvSafe(i.beneficiaryName),
-        csvSafe(i.bank),
+        i.beneficiaryName,
+        i.bank,
         i.accountNumber,
         i.accountType,
         (i.amountCents / 100).toFixed(2),
-      ].join(","),
+      ].map(csvSafe).join(","),
     );
     const csv = [header, ...rows].join("\n");
     const batchRef = "BATCH-" + instructions.length + "-" + instructions.reduce((t, i) => t + i.amountCents, 0);
@@ -39,9 +39,13 @@ export const bankBatchAdapter: PayoutAdapter = {
   },
 };
 
-function csvSafe(value: string): string {
-  if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
+/** Quote-escapes a CSV field AND neutralises spreadsheet formula injection. */
+export function csvSafe(value: string | number): string {
+  let s = String(value);
+  // A leading = + - @ (or control chars) makes Excel/Sheets execute it as a formula.
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  if (/[",\n]/.test(s)) s = `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
 
 export function getPayoutAdapter(): PayoutAdapter {

@@ -29,6 +29,10 @@ const guestAccountSchema = z.object({
 });
 
 export async function advanceStatusAction(reference: string): Promise<void> {
+  // Demo-only control for walking a booking through its statuses. Customers do
+  // not drive their own booking status in production (helpers use advanceJobAction),
+  // so this is disabled there.
+  if (process.env.NODE_ENV === "production") throw new Error("Disabled in production");
   // The booking's customer (demo control) or its assigned helper may advance it.
   const user = await assertRole("CUSTOMER", "HELPER");
   const booking = await prisma.booking.findUnique({ where: { reference }, include: { helper: true } });

@@ -12,6 +12,13 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Visible keyboard focus across the whole app (mouse clicks are unaffected). */
+:focus-visible {
+  outline: 2px solid #a22d8f;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 body {
   margin: 0;
   font-family: var(--font-jakarta);

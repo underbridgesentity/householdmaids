@@ -41,6 +41,8 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
   });
   if (!parsed.success) return { error: "Please check your application details and try again." };
   const input = parsed.data;
+  // Police-clearance consent is a compliance requirement, not a formality.
+  if (!input.clearanceConsent) return { error: "We need your consent to run a police clearance to proceed." };
   const lower = input.email.toLowerCase();
 
   // Validate uploaded documents BEFORE creating any records.
@@ -83,7 +85,7 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
         idUploaded: !!idDoc,
         selfieUploaded: !!selfie,
         referencesAdded: true,
-        clearanceConsent: true,
+        clearanceConsent: input.clearanceConsent,
         areas: { connect: input.areaIds.map((id) => ({ id })) },
       },
     });

@@ -67,6 +67,11 @@ export async function requestWithdrawalAction(_prev: WithdrawState, formData: Fo
     try {
       const result = await prisma.$transaction(
         async (tx) => {
+          // Lock the owning user row so two concurrent withdrawals can't both
+          // read the same balance and each insert a debit (overdraw). The
+          // append-only ledger + SERIALIZABLE alone does NOT conflict on
+          // insert-only writes, so an explicit row lock is required.
+          await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
           const txns = await tx.walletTransaction.findMany({ where: { userId: user.id } });
           const available = txns.reduce(
             (sum, t) => (t.status === "EARNED" || t.status === "PAID" ? sum + t.amountCents : sum),

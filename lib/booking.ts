@@ -110,6 +110,11 @@ export async function markBookingPaid(reference: string, providerRef?: string): 
   const settings = await getSettings();
 
   await prisma.$transaction(async (tx) => {
+    // Lock the booking row first so concurrent ITN deliveries (Payfast retries
+    // aggressively) serialize here. Without the lock both could read
+    // paymentStatus != "PAID" under READ COMMITTED and double-credit the
+    // referral reward.
+    await tx.$queryRaw`SELECT id FROM "Booking" WHERE reference = ${reference} FOR UPDATE`;
     const booking = await tx.booking.findUnique({
       where: { reference },
       include: { payment: true, referral: true },

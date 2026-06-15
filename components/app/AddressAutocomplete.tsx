@@ -97,7 +97,7 @@ export function AddressAutocomplete({
       {open && predictions.length > 0 && (
         <ul className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-[14px] border border-line bg-white shadow-[0_18px_40px_-18px_rgba(60,33,104,.45)]">
           {predictions.map((p, i) => (
-            <li key={p.placeId}>
+            <li key={p.placeId || `${p.description}-${i}`}>
               <button
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); pick(p); }}

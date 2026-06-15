@@ -9,8 +9,8 @@ function bankLine(snapshot: unknown): string {
   return `${s.bank ?? " - "} •••• ${s.accountTail ?? "????"}`;
 }
 
-export default async function PayoutsPage({ searchParams }: { searchParams: Promise<{ ran?: string }> }) {
-  const { ran } = await searchParams;
+export default async function PayoutsPage({ searchParams }: { searchParams: Promise<{ ran?: string; cycle?: string }> }) {
+  const { ran, cycle } = await searchParams;
 
   const [requested, recentPaid] = await Promise.all([
     prisma.payoutRequest.findMany({
@@ -42,9 +42,16 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
         </form>
       </div>
 
-      {ran ? (
-        <div className="flex items-center gap-2 rounded-[14px] border border-[#cfe8d8] bg-[#eef6f0] px-4 py-3 text-[14px] font-semibold text-money">
-          ✓ Friday payout run complete.
+      {ran === "1" ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-[#cfe8d8] bg-[#eef6f0] px-4 py-3 text-[14px] font-semibold text-money">
+          <span>✓ Friday payout run complete. Download the bank batch file to make the transfers.</span>
+          {cycle ? (
+            <a href={`/api/payout-batch/${cycle}`} className="rounded-lg bg-money px-3 py-1.5 text-[13px] font-bold text-white">Download CSV</a>
+          ) : null}
+        </div>
+      ) : ran === "0" ? (
+        <div className="rounded-[14px] border border-line bg-surface-lav px-4 py-3 text-[14px] font-semibold text-muted-label">
+          Nothing to pay out — the queue was empty.
         </div>
       ) : null}
 
