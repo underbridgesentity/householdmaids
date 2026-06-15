@@ -110,7 +110,11 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
     prisma.referral.findUnique({ where: { refereeId: customerId } }),
   ]);
   if (!service || !service.active) return { error: "That service is no longer available." };
+  if (service.quoteOnly) return { error: "This service is quote-only. Please request a quote instead." };
   if (!area) return { error: "Please choose a valid service area." };
+  if (service.mode === "EXTRAS" && addons.length === 0) {
+    return { error: "Please choose at least one task for an extras-only booking." };
+  }
 
   const isFirstBooking = priorBookings === 0;
   const applyReferral = isFirstBooking && !!pendingReferral && pendingReferral.status === "PENDING";

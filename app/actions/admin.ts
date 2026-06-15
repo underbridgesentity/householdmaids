@@ -119,6 +119,7 @@ export async function upsertServiceAction(formData: FormData): Promise<void> {
         basePrice: randsToCents(input.basePriceRands),
         hourlyRate: randsToCents(input.hourlyRateRands),
         minHours: input.minHours,
+        quoteOnly: input.quoteOnly,
         active: input.active,
       },
     });
@@ -135,6 +136,7 @@ export async function upsertServiceAction(formData: FormData): Promise<void> {
         basePrice: randsToCents(input.basePriceRands),
         hourlyRate: randsToCents(input.hourlyRateRands),
         minHours: input.minHours,
+        quoteOnly: input.quoteOnly,
         active: input.active,
         sortOrder: (max._max.sortOrder ?? 0) + 1,
       },

@@ -7,9 +7,11 @@ const settings = {
   weeklyDiscountPct: 15,
   biweeklyDiscountPct: 10,
   firstBookingDiscountCents: 7500,
+  extrasMinimumCents: 15000,
 };
 const roomsService = { mode: "ROOMS" as const, basePrice: 32000, hourlyRate: 0, minHours: 1 };
 const hoursService = { mode: "HOURS" as const, basePrice: 0, hourlyRate: 15000, minHours: 3 };
+const extrasService = { mode: "EXTRAS" as const, basePrice: 0, hourlyRate: 0, minHours: 1 };
 
 describe("computePrice — rooms", () => {
   it("adds per-bedroom and per-bathroom rates to the base", () => {
@@ -56,11 +58,32 @@ describe("computePrice — hours", () => {
   });
 });
 
+describe("computePrice — extras only", () => {
+  it("tops up to the call-out minimum when chosen extras fall below it", () => {
+    // One R90 extra, below the R150 minimum → R60 call-out top-up as base.
+    const p = computePrice({ service: extrasService, beds: 0, baths: 0, hours: 0, addonCents: [9000], recurrence: "ONCE", applyReferralDiscount: false, settings });
+    expect(p.addonsCents).toBe(9000);
+    expect(p.baseCents).toBe(6000); // 15000 - 9000
+    expect(p.subtotalCents).toBe(15000);
+    expect(p.totalCents).toBe(15000);
+  });
+
+  it("charges the extras total with no top-up once it clears the minimum", () => {
+    const p = computePrice({ service: extrasService, beds: 0, baths: 0, hours: 0, addonCents: [9000, 8000], recurrence: "ONCE", applyReferralDiscount: false, settings });
+    expect(p.addonsCents).toBe(17000);
+    expect(p.baseCents).toBe(0); // already above the R150 minimum
+    expect(p.totalCents).toBe(17000);
+  });
+});
+
 describe("fromPriceCents", () => {
   it("rooms = base + one bedroom + one bathroom", () => {
     expect(fromPriceCents(roomsService, settings)).toBe(32000 + 9000 + 7000);
   });
   it("hours = minHours * hourlyRate", () => {
     expect(fromPriceCents(hoursService, settings)).toBe(3 * 15000);
+  });
+  it("extras = the call-out minimum", () => {
+    expect(fromPriceCents(extrasService, settings)).toBe(15000);
   });
 });

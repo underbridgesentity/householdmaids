@@ -16,6 +16,9 @@ const SERVICES = [
   { name: "Move In / Out", emoji: "📦", tint: "#e8e8fb", mode: "ROOMS" as const, basePrice: 78000, hourlyRate: 0, minHours: 1, description: "Empty-home detailed clean", sortOrder: 3 },
   { name: "Office Clean", emoji: "🏢", tint: "#e6f3fb", mode: "HOURS" as const, basePrice: 0, hourlyRate: 15000, minHours: 3, description: "Commercial & workspace cleaning", sortOrder: 4 },
   { name: "Garden & Outdoor", emoji: "🌿", tint: "#e7f6ec", mode: "HOURS" as const, basePrice: 0, hourlyRate: 12000, minHours: 2, description: "Outdoor tidy, sweeping & more", sortOrder: 5 },
+  { name: "Window Cleaning", emoji: "🪟", tint: "#e6f3fb", mode: "HOURS" as const, basePrice: 0, hourlyRate: 14000, minHours: 2, description: "Streak-free windows, inside & out", sortOrder: 6 },
+  { name: "Just the Extras", emoji: "🧺", tint: "#fbeef7", mode: "EXTRAS" as const, basePrice: 0, hourlyRate: 0, minHours: 1, description: "Book ironing, laundry & more on their own", sortOrder: 7 },
+  { name: "Commercial Window Cleaning", emoji: "🏙️", tint: "#e6f3fb", mode: "HOURS" as const, basePrice: 0, hourlyRate: 0, minHours: 1, quoteOnly: true, description: "Offices & large spaces, quoted to spec", sortOrder: 8 },
 ];
 
 const ADDONS = [

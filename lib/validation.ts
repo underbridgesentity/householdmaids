@@ -34,6 +34,22 @@ export const withdrawSchema = z.object({
   amountCents: z.coerce.number().int().min(1),
 });
 
+// Public quote request (spec-based services, e.g. commercial window cleaning).
+export const enquirySchema = z.object({
+  serviceId: z.string().min(1),
+  areaId: z.string().optional().or(z.literal("")),
+  name: z.string().min(2, "Please enter your name").max(80),
+  email: z.string().email("Enter a valid email").max(120),
+  phone: z.string().max(20).optional().or(z.literal("")),
+  details: z.string().min(10, "Tell us a little about the job").max(2000),
+});
+
+export const enquiryStatusSchema = z.object({
+  id: z.string().min(1),
+  status: z.enum(["NEW", "QUOTED", "CLOSED"]),
+  adminNote: z.string().max(2000).optional().or(z.literal("")),
+});
+
 export const reviewSchema = z.object({
   bookingId: z.string().min(1),
   stars: z.coerce.number().int().min(1).max(5),
@@ -65,10 +81,11 @@ export const serviceUpsertSchema = z.object({
   name: z.string().min(2).max(60),
   description: z.string().min(2).max(120),
   emoji: z.string().min(1).max(8),
-  mode: z.enum(["ROOMS", "HOURS"]),
+  mode: z.enum(["ROOMS", "HOURS", "EXTRAS"]),
   basePriceRands: z.coerce.number().min(0).max(100000),
   hourlyRateRands: z.coerce.number().min(0).max(100000),
   minHours: z.coerce.number().int().min(1).max(12),
+  quoteOnly: z.coerce.boolean().default(false),
   active: z.coerce.boolean(),
 });
 

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Ticket, Tag, Banknote, BadgeCheck, UserPlus } from "lucide-react";
+import { LayoutDashboard, Ticket, Tag, Inbox, Banknote, BadgeCheck, UserPlus } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/rewards", label: "Rewards & discounts", icon: Ticket },
   { href: "/admin/services", label: "Services & pricing", icon: Tag },
+  { href: "/admin/enquiries", label: "Quote enquiries", icon: Inbox },
   { href: "/admin/payouts", label: "Payouts queue", icon: Banknote },
   { href: "/admin/helpers", label: "Helpers", icon: UserPlus },
   { href: "/admin/vetting", label: "Helper vetting", icon: BadgeCheck },

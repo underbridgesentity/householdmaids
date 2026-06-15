@@ -20,6 +20,13 @@ enum Role {
 enum ServiceMode {
   ROOMS
   HOURS
+  EXTRAS // priced purely from selected add-ons, with a call-out minimum
+}
+
+enum EnquiryStatus {
+  NEW
+  QUOTED
+  CLOSED
 }
 
 enum Recurrence {
@@ -131,6 +138,7 @@ model Area {
   bookings  Booking[]
   addresses Address[]
   helpers   HelperProfile[] @relation("HelperAreas")
+  enquiries Enquiry[]
 }
 
 model Service {
@@ -143,10 +151,12 @@ model Service {
   basePrice   Int         @default(0) // cents, ROOMS base
   hourlyRate  Int         @default(0) // cents, HOURS rate
   minHours    Int         @default(1)
+  quoteOnly   Boolean     @default(false) // spec-based: capture an enquiry instead of instant checkout
   active      Boolean     @default(true)
   sortOrder   Int         @default(0)
   createdAt   DateTime    @default(now())
   bookings    Booking[]
+  enquiries   Enquiry[]
 }
 
 model Addon {
@@ -348,6 +358,7 @@ model PlatformSettings {
   biweeklyDiscountPct      Int    @default(10)
   perBedroomCents          Int    @default(9000) // R90
   perBathroomCents         Int    @default(7000) // R70
+  extrasMinimumCents       Int    @default(15000) // R150 call-out minimum for extras-only bookings
   updatedAt                DateTime @updatedAt
 }
 
@@ -359,6 +370,25 @@ model Notification {
   body      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+/// A spec-based quote request (e.g. commercial window cleaning). Captured from
+/// the public quote form and worked through the admin enquiries inbox.
+model Enquiry {
+  id          String        @id @default(cuid())
+  reference   String        @unique
+  serviceId   String
+  service     Service       @relation(fields: [serviceId], references: [id])
+  areaId      String?
+  area        Area?         @relation(fields: [areaId], references: [id])
+  name        String
+  email       String
+  phone       String?
+  details     String // the customer's description of the job / specification
+  status      EnquiryStatus @default(NEW)
+  adminNote   String? // internal note / the quote amount once prepared
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model PasswordResetToken {

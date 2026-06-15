@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck, Lock, Gift } from "lucide-react";
-import { computePrice, type Recurrence } from "@/lib/pricing";
+import { computePrice, fromPriceCents, type Recurrence } from "@/lib/pricing";
 import { formatZar } from "@/lib/money";
 import { servicePhoto } from "@/lib/service-photos";
 import { Logo } from "@/components/ui/Logo";
 import { createBookingAction } from "@/app/actions/booking";
 
-type Service = { id: string; name: string; emoji: string; tint: string; description: string; mode: "ROOMS" | "HOURS"; basePrice: number; hourlyRate: number; minHours: number };
+type Service = { id: string; name: string; emoji: string; tint: string; description: string; mode: "ROOMS" | "HOURS" | "EXTRAS"; basePrice: number; hourlyRate: number; minHours: number };
 type Addon = { id: string; name: string; emoji: string; price: number };
 type Area = { id: string; name: string };
-type Settings = { perBedroomCents: number; perBathroomCents: number; weeklyDiscountPct: number; biweeklyDiscountPct: number; firstBookingDiscountCents: number };
+type Settings = { perBedroomCents: number; perBathroomCents: number; weeklyDiscountPct: number; biweeklyDiscountPct: number; firstBookingDiscountCents: number; extrasMinimumCents: number };
 type DateOption = { iso: string; label: string; sub: string };
 
 const TIMES = ["07:00", "09:00", "11:00", "13:00", "15:00"];
@@ -118,7 +118,19 @@ export function BookingWizard({
   );
   const area = areas.find((a) => a.id === areaId);
   const dateLabel = dateOptions.find((d) => d.iso === dateIso);
-  const configSummary = service.mode === "ROOMS" ? `${beds} bed · ${baths} bath` : `${effectiveHours} hours`;
+  const configSummary =
+    service.mode === "ROOMS"
+      ? `${beds} bed · ${baths} bath`
+      : service.mode === "EXTRAS"
+        ? `${addonIds.length} ${addonIds.length === 1 ? "extra" : "extras"}`
+        : `${effectiveHours} hours`;
+  // Extras-only bookings must include at least one extra before continuing.
+  const configReady = service.mode !== "EXTRAS" || addonIds.length > 0;
+  // Breakdown labels read differently for extras-only bookings.
+  const isExtras = service.mode === "EXTRAS";
+  const baseLabel = isExtras ? "Call-out minimum" : "Service";
+  const addonsLabel = isExtras ? "Tasks" : "Extras";
+  const showBaseLine = !isExtras || breakdown.baseCents > 0;
 
   return (
     <div className="lg:grid lg:min-h-[100dvh] lg:grid-cols-[minmax(0,400px)_1fr]">
@@ -155,8 +167,8 @@ export function BookingWizard({
               )}
               <div className="my-4 h-px bg-white/15" />
               <div className="flex flex-col gap-1.5 text-[13px] text-white/85">
-                <div className="flex justify-between"><span>Service</span><span>{formatZar(breakdown.baseCents)}</span></div>
-                {breakdown.addonsCents > 0 && <div className="flex justify-between"><span>Extras</span><span>{formatZar(breakdown.addonsCents)}</span></div>}
+                {showBaseLine && <div className="flex justify-between"><span>{baseLabel}</span><span>{formatZar(breakdown.baseCents)}</span></div>}
+                {breakdown.addonsCents > 0 && <div className="flex justify-between"><span>{addonsLabel}</span><span>{formatZar(breakdown.addonsCents)}</span></div>}
                 {breakdown.recurringDiscountCents > 0 && <div className="flex justify-between text-white"><span>Recurring discount</span><span>−{formatZar(breakdown.recurringDiscountCents)}</span></div>}
                 {breakdown.referralDiscountCents > 0 && <div className="flex justify-between text-white"><span>Referral discount</span><span>−{formatZar(breakdown.referralDiscountCents)}</span></div>}
               </div>
@@ -200,7 +212,7 @@ export function BookingWizard({
                 <div className="text-right">
                   <div className="text-[10.5px] text-muted-faint">from</div>
                   <div className="font-display text-sm font-bold text-magenta-brand">
-                    {formatZar(s.mode === "ROOMS" ? s.basePrice + settings.perBedroomCents + settings.perBathroomCents : s.minHours * s.hourlyRate)}
+                    {formatZar(fromPriceCents(s, settings))}
                   </div>
                 </div>
               </button>
@@ -225,16 +237,23 @@ export function BookingWizard({
               <div className="font-display text-base font-bold">{service.name}</div>
             </div>
 
-            {service.mode === "ROOMS" ? (
+            {service.mode === "ROOMS" && (
               <>
                 <Counter label="Bedrooms" sub="+R90 each" value={beds} onDec={() => setBeds((v) => Math.max(1, v - 1))} onInc={() => setBeds((v) => Math.min(8, v + 1))} />
                 <Counter label="Bathrooms" sub="+R70 each" value={baths} onDec={() => setBaths((v) => Math.max(1, v - 1))} onInc={() => setBaths((v) => Math.min(6, v + 1))} />
               </>
-            ) : (
+            )}
+            {service.mode === "HOURS" && (
               <Counter label="Hours needed" sub="Billed per hour" value={effectiveHours} onDec={() => setHours((v) => Math.max(service.minHours, v - 1))} onInc={() => setHours((v) => Math.min(10, v + 1))} />
             )}
+            {service.mode === "EXTRAS" && (
+              <div className="mb-1 flex items-center gap-2.5 rounded-[14px] border border-dashed border-[#d9c8e6] bg-surface-lav px-3.5 py-3 text-[12.5px] text-muted">
+                <span className="text-base">🧺</span>
+                <span>Pick the tasks you need. A {formatZar(settings.extrasMinimumCents)} call-out minimum applies.</span>
+              </div>
+            )}
 
-            <div className="mb-3 mt-5 px-0.5 font-display text-[15px] font-bold">Add extras</div>
+            <div className="mb-3 mt-5 px-0.5 font-display text-[15px] font-bold">{service.mode === "EXTRAS" ? "Choose your tasks" : "Add extras"}</div>
             <div className="flex flex-col gap-2.5">
               {addons.map((a) => {
                 const sel = addonIds.includes(a.id);
@@ -250,7 +269,7 @@ export function BookingWizard({
             </div>
             <div className="h-4" />
           </div>
-          <FooterTotal total={breakdown.totalCents} onClick={() => setStep(2)} label="Continue ›" />
+          <FooterTotal total={breakdown.totalCents} onClick={() => setStep(2)} label="Continue ›" disabled={!configReady} hint={!configReady ? "Select at least one task to continue" : undefined} />
         </>
       )}
 
@@ -339,7 +358,7 @@ export function BookingWizard({
                 <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] bg-surface-lav text-[22px]">{service.emoji}</div>
                 <div className="flex-1">
                   <div className="font-display text-[15.5px] font-bold">{service.name}</div>
-                  <div className="text-[12.5px] text-muted">{service.mode === "ROOMS" ? `${beds} bed · ${baths} bath` : `${effectiveHours} hours`}</div>
+                  <div className="text-[12.5px] text-muted">{configSummary}</div>
                 </div>
               </div>
               <Row label="📍 Area" value={area?.name ?? ""} />
@@ -381,8 +400,8 @@ export function BookingWizard({
             )}
 
             <div className="card p-4 lg:hidden">
-              <Line label="Service" value={formatZar(breakdown.baseCents)} />
-              <Line label="Extras" value={formatZar(breakdown.addonsCents)} />
+              {showBaseLine && <Line label={baseLabel} value={formatZar(breakdown.baseCents)} />}
+              {breakdown.addonsCents > 0 && <Line label={addonsLabel} value={formatZar(breakdown.addonsCents)} />}
               {breakdown.recurringDiscountCents > 0 && <Line label="Recurring discount" value={`−${formatZar(breakdown.recurringDiscountCents)}`} money />}
               {breakdown.referralDiscountCents > 0 && <Line label="Referral discount" value={`−${formatZar(breakdown.referralDiscountCents)}`} magenta />}
               <div className="my-2.5 h-px bg-[#f0ebf6]" />
@@ -432,14 +451,14 @@ function Counter({ label, sub, value, onDec, onInc }: { label: string; sub: stri
   );
 }
 
-function FooterTotal({ total, onClick, label }: { total: number; onClick: () => void; label: string }) {
+function FooterTotal({ total, onClick, label, disabled, hint }: { total: number; onClick: () => void; label: string; disabled?: boolean; hint?: string }) {
   return (
     <div className="mt-auto flex items-center gap-3.5 border-t border-[#ece6f3] bg-white px-[18px] pb-[18px] pt-3.5">
       <div className="flex-1">
-        <div className="text-[10.5px] uppercase tracking-wide text-muted-faint">Estimated total</div>
+        <div className="text-[10.5px] uppercase tracking-wide text-muted-faint">{hint ?? "Estimated total"}</div>
         <div className="font-display text-[21px] font-extrabold">{formatZar(total)}</div>
       </div>
-      <button onClick={onClick} className="rounded-[15px] bg-brand-gradient px-6 py-3.5 font-display font-bold text-white">{label}</button>
+      <button onClick={onClick} disabled={disabled} className="rounded-[15px] bg-brand-gradient px-6 py-3.5 font-display font-bold text-white disabled:opacity-50">{label}</button>
     </div>
   );
 }

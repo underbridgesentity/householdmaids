@@ -10,5 +10,6 @@ export function servicePhoto(name: string): string {
   if (n.includes("office") || n.includes("commercial")) return "/photos/svc-office.jpg";
   if (n.includes("garden") || n.includes("outdoor")) return "/photos/svc-garden.jpg";
   if (n.includes("window")) return "/photos/svc-windows.jpg";
+  if (n.includes("extra")) return "/photos/products.jpg";
   return "/photos/svc-standard.jpg";
 }

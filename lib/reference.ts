@@ -9,6 +9,11 @@ export function payoutReference(): string {
   return "PO-" + randomDigits(4);
 }
 
+/** Reference for a quote enquiry, e.g. QT-48213. */
+export function enquiryReference(): string {
+  return "QT-" + randomDigits(5);
+}
+
 function randomDigits(n: number): string {
   let out = "";
   while (out.length < n) {

@@ -108,8 +108,17 @@ export default async function LandingPage() {
                 <div className="font-display text-lg font-bold">{s.name}</div>
                 <div className="my-1.5 text-[13.5px] leading-relaxed text-muted">{s.description}</div>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="font-display text-[15px] font-bold text-magenta-brand">from {formatZar(fromPriceCents(s, settings))}</span>
-                  <Link href={`/book?service=${s.id}`} className="text-[13.5px] font-bold text-indigo-brand">Book ›</Link>
+                  {s.quoteOnly ? (
+                    <>
+                      <span className="font-display text-[15px] font-bold text-magenta-brand">Tailored quote</span>
+                      <Link href={`/quote?service=${s.id}`} className="text-[13.5px] font-bold text-indigo-brand">Get a quote ›</Link>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-display text-[15px] font-bold text-magenta-brand">from {formatZar(fromPriceCents(s, settings))}</span>
+                      <Link href={`/book?service=${s.id}`} className="text-[13.5px] font-bold text-indigo-brand">Book ›</Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

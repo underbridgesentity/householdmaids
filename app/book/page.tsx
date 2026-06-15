@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/rbac";
 import { getSettings } from "@/lib/settings";
@@ -15,11 +16,21 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const loggedIn = user?.role === "CUSTOMER";
 
   const [services, addons, areas, settings] = await Promise.all([
-    prisma.service.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
+    // Quote-only services (e.g. commercial window cleaning) are handled by the
+    // /quote enquiry flow, not the instant-checkout wizard.
+    prisma.service.findMany({ where: { active: true, quoteOnly: false }, orderBy: { sortOrder: "asc" } }),
     prisma.addon.findMany({ where: { active: true } }),
     prisma.area.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     getSettings(),
   ]);
+
+  // A link to a quote-only service belongs in the enquiry flow, not the wizard.
+  if (service && !services.some((s) => s.id === service)) {
+    const quoteOnly = await prisma.service.findFirst({ where: { id: service, quoteOnly: true }, select: { id: true } });
+    if (quoteOnly) redirect(`/quote?service=${service}`);
+  }
+  // Only seed the wizard with a service it actually offers.
+  const initialServiceId = service && services.some((s) => s.id === service) ? service : undefined;
 
   let referralEligible = false;
   let referralCode: string | undefined;
@@ -59,11 +70,12 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           weeklyDiscountPct: settings.weeklyDiscountPct,
           biweeklyDiscountPct: settings.biweeklyDiscountPct,
           firstBookingDiscountCents: settings.firstBookingDiscountCents,
+          extrasMinimumCents: settings.extrasMinimumCents,
         }}
         dateOptions={dateOptions}
         referralEligible={referralEligible}
         referralCode={referralCode}
-        initialServiceId={service}
+        initialServiceId={initialServiceId}
         loggedIn={loggedIn}
         presetRef={ref}
       />

@@ -14,6 +14,7 @@ export default async function ServicesPage() {
     basePriceRands: Math.round(s.basePrice / 100),
     hourlyRateRands: Math.round(s.hourlyRate / 100),
     minHours: s.minHours,
+    quoteOnly: s.quoteOnly,
     active: s.active,
   }));
 
