@@ -14,13 +14,13 @@ export default function PrivacyPage() {
       </p>
 
       <Section heading="Information we collect">
-        <p>Account details (name, email, phone), booking details and addresses, payment confirmations from our payment provider, in-app messages, and — for helpers — ID number, a selfie, references, banking details and background-check consent.</p>
+        <p>Account details (name, email, phone), booking details and addresses, payment confirmations from our payment provider, in-app messages, and, for helpers, ID number, a selfie, references, banking details and background-check consent.</p>
       </Section>
       <Section heading="How we use it">
         <p>To create and manage your account, match and fulfil bookings, process payments and payouts, run the referral programme, vet helpers, provide support, prevent fraud, and meet legal obligations.</p>
       </Section>
       <Section heading="How we protect it">
-        <p>Passwords are hashed (Argon2id). Sensitive identifiers — ID numbers, banking details and uploaded helper documents — are encrypted at rest (AES-256-GCM) and only decrypted server-side when strictly needed. Traffic is served over HTTPS. Access to personal information is restricted on a least-privilege basis.</p>
+        <p>Passwords are hashed (Argon2id). Sensitive identifiers, ID numbers, banking details and uploaded helper documents, are encrypted at rest (AES-256-GCM) and only decrypted server-side when strictly needed. Traffic is served over HTTPS. Access to personal information is restricted on a least-privilege basis.</p>
       </Section>
       <Section heading="Sharing">
         <p>We share information only as needed to provide the service: the assigned helper sees the booking details required to do the job; payments go through Payfast; payouts go to your bank. We do not sell your personal information.</p>

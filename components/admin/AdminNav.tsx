@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LayoutDashboard, Ticket, Tag, Banknote, BadgeCheck } from "lucide-react";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: "📊" },
-  { href: "/admin/rewards", label: "Rewards & discounts", icon: "🎟️" },
-  { href: "/admin/services", label: "Services & pricing", icon: "🏷️" },
-  { href: "/admin/payouts", label: "Payouts queue", icon: "💸" },
-  { href: "/admin/vetting", label: "Helper vetting", icon: "✅" },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/rewards", label: "Rewards & discounts", icon: Ticket },
+  { href: "/admin/services", label: "Services & pricing", icon: Tag },
+  { href: "/admin/payouts", label: "Payouts queue", icon: Banknote },
+  { href: "/admin/vetting", label: "Helper vetting", icon: BadgeCheck },
 ];
 
 export function AdminNav() {
@@ -27,7 +28,7 @@ export function AdminNav() {
               (active ? "bg-brand-gradient text-white shadow-[0_12px_22px_-14px_rgba(120,40,130,.8)]" : "text-[#5f5878] hover:bg-surface-lav")
             }
           >
-            <span className="text-[17px]">{item.icon}</span>
+            <item.icon size={19} strokeWidth={active ? 2.4 : 2} />
             <span>{item.label}</span>
           </Link>
         );

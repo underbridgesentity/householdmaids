@@ -82,7 +82,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
         <div className="relative z-10 mt-10 flex-1">
           <div className="text-[50px]">🧽</div>
           <h2 className="mt-4 font-display text-[28px] font-extrabold leading-[1.12] tracking-tight">Join the Household Maids team</h2>
-          <p className="mt-3 max-w-xs text-[15px] leading-relaxed text-white/80">A quick 3-step application. We verify your details, then get you earning — paid every Friday.</p>
+          <p className="mt-3 max-w-xs text-[15px] leading-relaxed text-white/80">A quick 3-step application. We verify your details, then get you earning, paid every Friday.</p>
           <div className="mt-9 flex flex-col gap-3">
             {steps.map((label, i) => (
               <div key={label} className={`flex items-center gap-3 text-sm font-semibold ${i <= step ? "text-white" : "text-white/55"}`}>
@@ -120,7 +120,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
         </div>
       </div>
 
-      {/* STEP 1 — details */}
+      {/* STEP 1, details */}
       {step === 0 && (
         <>
           <div className="flex-1 px-[18px]">
@@ -169,7 +169,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
         </>
       )}
 
-      {/* STEP 2 — experience */}
+      {/* STEP 2, experience */}
       {step === 1 && (
         <>
           <div className="flex-1 px-[18px]">
@@ -217,7 +217,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
         </>
       )}
 
-      {/* STEP 3 — banking */}
+      {/* STEP 3, banking */}
       {step === 2 && (
         <>
           <div className="flex-1 px-[18px]">

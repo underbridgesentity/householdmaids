@@ -23,7 +23,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
       <div className="px-[18px] pb-6">
         {requested && (
           <div className="mb-4 rounded-2xl border border-[#cfe8d8] bg-[#eef6f0] px-4 py-3 text-[13px] font-semibold text-money-dark">
-            ✓ Payout requested — it&apos;ll be paid out this Friday.
+            ✓ Payout requested, it&apos;ll be paid out this Friday.
           </div>
         )}
 

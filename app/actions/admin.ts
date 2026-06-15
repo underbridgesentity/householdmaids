@@ -94,7 +94,7 @@ export async function deleteServiceAction(id: string): Promise<void> {
     await prisma.service.delete({ where: { id } });
     await audit({ actorId: admin.id, action: "service.deleted", entity: "Service", entityId: id });
   } catch {
-    // A service with bookings cannot be deleted (FK constraint) — deactivate instead.
+    // A service with bookings cannot be deleted (FK constraint), deactivate instead.
     await prisma.service.update({ where: { id }, data: { active: false } });
     await audit({ actorId: admin.id, action: "service.deactivated", entity: "Service", entityId: id, meta: { reason: "has-bookings" } });
   }

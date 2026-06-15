@@ -35,7 +35,7 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
 
   return (
     <div className="min-h-[100dvh] bg-surface lg:flex">
-      {/* Order summary — gradient panel (left on desktop, header on mobile) */}
+      {/* Order summary, gradient panel (left on desktop, header on mobile) */}
       <aside className="relative overflow-hidden bg-hero-gradient p-6 text-white lg:flex lg:w-[400px] lg:flex-col lg:p-9">
         <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/[.06]" />
         <Link href="/app" className="relative z-10" aria-label="Household Maids home"><Logo variant="white" height={28} /></Link>

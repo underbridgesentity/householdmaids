@@ -47,7 +47,11 @@ export function SignupForm({ presetCode }: { presetCode?: string }) {
       <button type="submit" disabled={pending} className="btn-primary mt-2 w-full">
         {pending ? "Creating…" : "Create account"}
       </button>
-      <p className="text-center text-[12.5px] text-muted-faint">By continuing you agree to our Terms &amp; Privacy Policy.</p>
+      <p className="text-center text-[12.5px] text-muted-faint">
+        By continuing you agree to our{" "}
+        <Link href="/terms" className="font-semibold text-magenta-brand">Terms</Link> &amp;{" "}
+        <Link href="/privacy" className="font-semibold text-magenta-brand">Privacy Policy</Link>.
+      </p>
       <p className="text-center text-sm text-muted-soft">
         Already have an account?{" "}
         <Link href="/login" className="font-bold text-magenta-brand">Sign in</Link>

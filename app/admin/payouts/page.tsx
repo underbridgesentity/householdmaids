@@ -6,7 +6,7 @@ type BankSnapshot = { bank?: string; accountTail?: string; accountType?: string 
 
 function bankLine(snapshot: unknown): string {
   const s = (snapshot ?? {}) as BankSnapshot;
-  return `${s.bank ?? "—"} •••• ${s.accountTail ?? "????"}`;
+  return `${s.bank ?? " - "} •••• ${s.accountTail ?? "????"}`;
 }
 
 export default async function PayoutsPage({ searchParams }: { searchParams: Promise<{ ran?: string }> }) {
@@ -94,7 +94,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14px] font-semibold text-ink">{req.user.fullName}</div>
                   <div className="text-[12.5px] text-muted">
-                    {bankLine(req.bankSnapshot)} · {req.paidAt ? req.paidAt.toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) : "—"}
+                    {bankLine(req.bankSnapshot)} · {req.paidAt ? req.paidAt.toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) : " - "}
                   </div>
                 </div>
                 <div className="font-display text-[14px] font-extrabold text-money">{formatZar(req.amountCents)}</div>

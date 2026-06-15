@@ -10,7 +10,7 @@ export function ForgotForm() {
   if (state?.sent) {
     return (
       <div className="rounded-2xl border border-[#cfe8d8] bg-[#eef6f0] px-4 py-4 text-sm text-money-dark">
-        If an account exists for that email, we&apos;ve sent a reset link. Check your inbox (and spam) — it&apos;s valid for 1 hour.
+        If an account exists for that email, we&apos;ve sent a reset link. Check your inbox (and spam), it&apos;s valid for 1 hour.
         <div className="mt-3">
           <Link href="/login" className="font-bold text-indigo-brand">Back to sign in</Link>
         </div>

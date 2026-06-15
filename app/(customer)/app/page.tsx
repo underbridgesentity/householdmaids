@@ -80,7 +80,7 @@ export default async function HomePage() {
           <div className="text-3xl">🎁</div>
           <div className="relative flex-1">
             <div className="font-display text-[15.5px] font-bold">Earn {formatZar(settings.referrerRewardCents)} per friend</div>
-            <div className="mt-0.5 text-[12.5px] text-white/80">Share your link — get paid when they book.</div>
+            <div className="mt-0.5 text-[12.5px] text-white/80">Share your link, get paid when they book.</div>
           </div>
           <span className="text-xl">›</span>
         </Link>

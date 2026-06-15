@@ -28,7 +28,7 @@ export type HelperApplyState = { error?: string } | undefined;
 /**
  * Submits a helper application. Creates the HELPER user + an IN_REVIEW
  * HelperProfile in a single transaction, encrypting PII (ID number + bank)
- * at rest. Does NOT auto-login — the helper is told to wait for vetting.
+ * at rest. Does NOT auto-login, the helper is told to wait for vetting.
  */
 export async function submitHelperApplicationAction(formData: FormData): Promise<HelperApplyState> {
   const ip = await clientIp();

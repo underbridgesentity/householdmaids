@@ -40,7 +40,7 @@ export async function advanceStatusAction(reference: string): Promise<void> {
 }
 
 /**
- * Creates a booking. Works for both signed-in customers AND guests — a guest
+ * Creates a booking. Works for both signed-in customers AND guests, a guest
  * chooses everything first, then creates an account (or signs in) at the end.
  * The server is the single source of truth for price.
  */
@@ -72,7 +72,7 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
     const existing = await prisma.user.findUnique({ where: { email: lower } });
 
     if (existing) {
-      // Returning customer finishing checkout — verify their password to sign in.
+      // Returning customer finishing checkout, verify their password to sign in.
       if (existing.role !== "CUSTOMER" || !(await verifyPassword(existing.passwordHash, password))) {
         return { error: "An account already exists for this email. Enter your correct password, or sign in first." };
       }

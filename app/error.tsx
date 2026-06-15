@@ -8,7 +8,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
       <div className="text-5xl">🧹</div>
       <h1 className="mt-4 font-display text-2xl font-extrabold">Something went wrong</h1>
       <p className="mt-2 max-w-sm text-sm text-muted-soft">
-        Sorry — we hit a snag. Please try again, or head back home.
+        Sorry, we hit a snag. Please try again, or head back home.
       </p>
       <div className="mt-6 flex gap-3">
         <button onClick={reset} className="btn-primary px-6">Try again</button>

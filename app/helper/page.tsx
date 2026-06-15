@@ -1,13 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Banknote, MapPin, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
 export const metadata = { title: "Become a helper · Household Maids" };
 
 const features = [
-  { emoji: "💰", title: "Weekly payouts every Friday", sub: "Reliable income, straight to your bank" },
-  { emoji: "📍", title: "Work in areas near you", sub: "Pick the suburbs that suit you" },
-  { emoji: "🛡️", title: "Insured, supported jobs", sub: "We have your back on every clean" },
+  { Icon: Banknote, title: "Weekly payouts every Friday", sub: "Reliable income, straight to your bank" },
+  { Icon: MapPin, title: "Work in areas near you", sub: "Pick the suburbs that suit you" },
+  { Icon: ShieldCheck, title: "Insured, supported jobs", sub: "We have your back on every clean" },
 ];
 
 export default function HelperIntroPage() {
@@ -37,7 +38,7 @@ export default function HelperIntroPage() {
           <div className="mt-7 flex flex-col gap-3">
             {features.map((f) => (
               <div key={f.title} className="flex items-center gap-3.5 rounded-[16px] border border-white/15 bg-white/10 p-3.5 backdrop-blur-sm">
-                <div className="flex h-[44px] w-[44px] items-center justify-center rounded-[13px] bg-white/15 text-[22px]">{f.emoji}</div>
+                <div className="flex h-[44px] w-[44px] items-center justify-center rounded-[13px] bg-white/15"><f.Icon size={22} strokeWidth={2.1} /></div>
                 <div>
                   <div className="font-display text-[14.5px] font-bold">{f.title}</div>
                   <div className="text-[12px] text-white/70">{f.sub}</div>

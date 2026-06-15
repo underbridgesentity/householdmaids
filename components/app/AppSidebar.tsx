@@ -4,15 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { logoutAction } from "@/app/actions/auth";
-import { type NavItem, isActive } from "./nav";
+import { CUSTOMER_NAV, HELPER_NAV, isActive } from "./nav";
 
 /** Desktop-only left navigation rail for the customer / helper apps. */
 export function AppSidebar({
-  items, userName, userEmail, roleLabel,
+  variant, userName, userEmail, roleLabel,
 }: {
-  items: NavItem[]; userName: string; userEmail?: string; roleLabel: string;
+  variant: "customer" | "helper"; userName: string; userEmail?: string; roleLabel: string;
 }) {
   const pathname = usePathname();
+  const items = variant === "helper" ? HELPER_NAV : CUSTOMER_NAV;
   return (
     <aside className="sticky top-0 hidden h-screen w-64 flex-shrink-0 flex-col border-r border-line bg-white/70 px-4 py-5 backdrop-blur lg:flex">
       <div className="px-2 pb-6">
@@ -30,7 +31,7 @@ export function AppSidebar({
                 active ? "bg-brand-gradient text-white shadow-card" : "text-[#5f5878] hover:bg-surface-lav"
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <item.icon size={19} strokeWidth={active ? 2.4 : 2} />
               {item.label}
             </Link>
           );

@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   outputFileTracingRoot: __dirname,
+  images: { qualities: [75, 90] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

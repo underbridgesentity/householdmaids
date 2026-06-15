@@ -1,7 +1,6 @@
 import { getSessionUser } from "@/lib/rbac";
 import { AppSidebar } from "./AppSidebar";
 import { BottomTabs } from "./BottomTabs";
-import { CUSTOMER_NAV, HELPER_NAV } from "./nav";
 
 /**
  * Device-adaptive app shell.
@@ -10,7 +9,7 @@ import { CUSTOMER_NAV, HELPER_NAV } from "./nav";
  *
  * Props:
  *  - variant : which nav set + role label (customer | helper)
- *  - sidebar : show the desktop sidebar (off for public pages — no session)
+ *  - sidebar : show the desktop sidebar (off for public pages, no session)
  *  - tabs    : show the mobile bottom tab bar
  *  - narrow  : keep focused flows (booking, payment, chat) centered on desktop
  */
@@ -25,14 +24,13 @@ export async function AppShell({
   /** Vertically center short content as a focused panel on desktop. */
   center?: boolean;
 }) {
-  const nav = variant === "helper" ? HELPER_NAV : CUSTOMER_NAV;
   const roleLabel = variant === "helper" ? "Helper" : "Customer";
   const user = sidebar ? await getSessionUser() : null;
 
   return (
     <div className="min-h-[100dvh] bg-[radial-gradient(1200px_600px_at_80%_-10%,#efe7f6_0%,#ded9e6_55%,#d4cee0_100%)] lg:flex">
       {sidebar && (
-        <AppSidebar items={nav} userName={user?.name ?? "You"} userEmail={user?.email ?? undefined} roleLabel={roleLabel} />
+        <AppSidebar variant={variant} userName={user?.name ?? "You"} userEmail={user?.email ?? undefined} roleLabel={roleLabel} />
       )}
       <div className="flex min-h-[100dvh] w-full flex-1 flex-col">
         <main className="flex flex-1 flex-col">
@@ -48,7 +46,7 @@ export async function AppShell({
             {children}
           </div>
         </main>
-        {tabs && <BottomTabs items={nav} />}
+        {tabs && <BottomTabs variant={variant} />}
       </div>
     </div>
   );

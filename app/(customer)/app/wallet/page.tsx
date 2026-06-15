@@ -95,7 +95,7 @@ export default async function WalletPage() {
         {/* Recent earnings */}
         <h3 className="mb-3 mt-5 px-0.5 font-display text-base font-bold">Recent earnings</h3>
         <div className="flex flex-col gap-2.5 pb-6">
-          {referrals.length === 0 && <div className="card p-4 text-center text-[13px] text-muted">No referrals yet — share your link to start earning.</div>}
+          {referrals.length === 0 && <div className="card p-4 text-center text-[13px] text-muted">No referrals yet, share your link to start earning.</div>}
           {referrals.map((r) => (
             <div key={r.id} className="flex items-center gap-3 rounded-[15px] border border-line bg-white px-3.5 py-3">
               <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] bg-surface-lav text-[17px]">🤝</div>

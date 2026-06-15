@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ShieldCheck, Star, Lock, Target, Leaf, Phone, Mail, Clock, MapPin, Gift } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { fromPriceCents } from "@/lib/pricing";
@@ -21,7 +22,7 @@ export default async function LandingPage() {
 
   return (
     <div className="bg-white text-ink">
-      {/* Nav — floating glass pill with a mobile hamburger menu */}
+      {/* Nav, floating glass pill with a mobile hamburger menu */}
       <MarketingNav />
 
       {/* Hero */}
@@ -36,11 +37,11 @@ export default async function LandingPage() {
               <span className="text-[12.5px] font-bold tracking-wide text-white">NOW LAUNCHING IN GAUTENG</span>
             </div>
             <h1 className="font-display text-[clamp(34px,4.6vw,54px)] font-extrabold leading-[1.04] tracking-tight text-white">
-              For all your<br />cleaning needs —<br />
+              For all your<br />cleaning needs - <br />
               <span className="text-orange-brand">rewarded.</span>
             </h1>
             <p className="mt-4 max-w-md text-[17px] leading-relaxed text-white/80">
-              Book trusted, vetted cleaners across Gauteng in under a minute — then earn {reward} every time a friend
+              Book trusted, vetted cleaners across Gauteng in under a minute, then earn {reward} every time a friend
               books with your referral link.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
@@ -52,9 +53,9 @@ export default async function LandingPage() {
               </a>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-5 text-[13.5px] font-semibold text-white/90">
-              <span>🛡️ Vetted &amp; insured</span>
-              <span>⭐ 4.9 rating</span>
-              <span>🔒 Secure payments</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck size={16} strokeWidth={2.2} /> Vetted &amp; insured</span>
+              <span className="flex items-center gap-1.5"><Star size={16} strokeWidth={2.2} /> 4.9 rating</span>
+              <span className="flex items-center gap-1.5"><Lock size={16} strokeWidth={2.2} /> Secure payments</span>
             </div>
             {/* Mobile hero image (desktop uses the framed column on the right) */}
             <div className="relative mt-7 h-56 w-full overflow-hidden rounded-3xl shadow-2xl md:hidden">
@@ -65,10 +66,10 @@ export default async function LandingPage() {
             <div className="absolute right-2.5 top-20 h-[150px] w-[88px] rounded-l-none rounded-r-[90px] bg-orange-brand opacity-90" />
             <div className="absolute right-12 top-20 h-[150px] w-[88px] rounded-r-[90px] bg-orange-brand opacity-50" />
             <div className="relative z-10 mx-auto mt-6 h-[400px] w-[330px] max-w-full overflow-hidden rounded-[180px] shadow-[0_30px_60px_-20px_rgba(0,0,0,.5)]">
-              <Image src="/photos/hero.jpg" alt="A friendly Household Maids cleaner" fill priority sizes="330px" className="object-cover" />
+              <Image src="/photos/hero.jpg" alt="A friendly Household Maids cleaner" fill priority sizes="(max-width: 1024px) 50vw, 460px" quality={90} className="object-cover" />
             </div>
             <div className="glass absolute bottom-3.5 left-0 z-20 flex items-center gap-3 rounded-2xl px-4 py-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fdf0dc] text-lg">💸</div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fdf0dc] text-orange-deep"><Gift size={20} strokeWidth={2.2} /></div>
               <div>
                 <div className="font-display text-[15px] font-extrabold text-orange-deep">{reward} per referral</div>
                 <div className="text-[11.5px] text-muted">Earn when a friend books</div>
@@ -78,7 +79,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Stats — honest, launch-appropriate facts */}
+      {/* Stats, honest, launch-appropriate facts */}
       <section className="grid grid-cols-2 gap-px border-y border-line bg-line md:grid-cols-4">
         {[[`${areas.length}`, "Gauteng areas"], ["100%", "Vetted & insured"], [reward, "Per referral"], ["Fri", "Weekly payouts"]].map(
           ([n, l], i) => (
@@ -141,18 +142,18 @@ export default async function LandingPage() {
           <div>
             <h2 className="mb-3 font-display text-[32px] font-extrabold tracking-tight text-white">Turn your network into income.</h2>
             <p className="mb-6 max-w-md text-base leading-relaxed text-white/85">
-              Share your link. When a friend&apos;s first booking is paid, you earn {reward} — and they get {discount} off.
+              Share your link. When a friend&apos;s first booking is paid, you earn {reward}, and they get {discount} off.
               No cap on how much you make.
             </p>
             <Link href="/signup" className="rounded-xl bg-white px-7 py-3.5 font-display font-bold text-indigo-brand">Get your referral link</Link>
           </div>
-          {/* Illustrative explainer — how the reward works (not a real user's earnings) */}
+          {/* Illustrative explainer, how the reward works (not a real user's earnings) */}
           <div className="glass-dark rounded-[20px] p-6">
             <div className="mb-1 flex items-baseline gap-2">
               <span className="font-display text-[40px] font-extrabold text-white">{reward}</span>
               <span className="text-[15px] font-semibold text-white/80">per friend · no cap</span>
             </div>
-            <div className="mb-5 text-[13px] text-white/70">Paid out every Friday — no minimum, no fees.</div>
+            <div className="mb-5 text-[13px] text-white/70">Paid out every Friday, no minimum, no fees.</div>
             <div className="flex flex-col gap-3">
               {[
                 ["1", "Share your link", "Send your personal link to friends & family."],
@@ -176,14 +177,16 @@ export default async function LandingPage() {
       <section className="px-6 pb-14 pt-6 md:px-9">
         <h2 className="mb-8 text-center font-display text-[32px] font-extrabold tracking-tight text-indigo-brand">Why choose us?</h2>
         <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            ["🛡️", "Trusted professionals", "Every cleaner is ID-verified with references and a police clearance before they join."],
-            ["🎯", "Tailored solutions", "We customise cleaning plans to fit your schedule, preferences and budget."],
-            ["🌿", "Eco-friendly practices", "We prioritise sustainability, using environmentally friendly products wherever possible."],
-            ["⭐", "Satisfaction guaranteed", "We strive for perfection on every clean — your satisfaction is our priority."],
-          ].map(([icon, t, d]) => (
+          {([
+            [ShieldCheck, "Trusted professionals", "Every cleaner is ID-verified with references and a police clearance before they join."],
+            [Target, "Tailored solutions", "We customise cleaning plans to fit your schedule, preferences and budget."],
+            [Leaf, "Eco-friendly practices", "We prioritise sustainability, using environmentally friendly products wherever possible."],
+            [Star, "Satisfaction guaranteed", "We strive for perfection on every clean, your satisfaction is our priority."],
+          ] as const).map(([Icon, t, d]) => (
             <div key={t} className="rounded-2xl border border-line p-5">
-              <div className="mb-3 text-[26px]">{icon}</div>
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fdf0dc] text-orange-accent">
+                <Icon size={22} strokeWidth={2.2} />
+              </div>
               <div className="mb-1.5 font-display text-base font-extrabold text-orange-accent">{t}</div>
               <div className="text-[13.5px] leading-relaxed text-muted-soft">{d}</div>
             </div>
@@ -249,14 +252,14 @@ export default async function LandingPage() {
           <p className="text-[15px] text-muted-soft">We&apos;d love to help with your next clean.</p>
         </div>
         <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            ["📞", "PHONE", "062 032 4931"],
-            ["✉️", "EMAIL", "info@householdmaids.co.za"],
-            ["🕒", "HOURS", "Mon–Fri 08:00–16:00 · Weekends closed"],
-            ["📍", "VISIT (KEMPTON PARK)", "70 Commissioner Rd, Office 7, Monument Corner Office Park"],
-          ].map(([icon, label, value]) => (
+          {([
+            [Phone, "PHONE", "062 032 4931"],
+            [Mail, "EMAIL", "info@householdmaids.co.za"],
+            [Clock, "HOURS", "Mon–Fri 08:00–16:00 · Weekends closed"],
+            [MapPin, "VISIT (KEMPTON PARK)", "70 Commissioner Rd, Office 7, Monument Corner Office Park"],
+          ] as const).map(([Icon, label, value]) => (
             <div key={label} className="rounded-2xl border border-line bg-white p-5 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[13px] bg-[#fdf0dc] text-[22px]">{icon}</div>
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[13px] bg-[#fdf0dc] text-orange-accent"><Icon size={22} strokeWidth={2.2} /></div>
               <div className="mb-1 font-display text-[13px] font-bold text-orange-accent">{label}</div>
               <div className="text-[13.5px] font-semibold text-ink">{value}</div>
             </div>

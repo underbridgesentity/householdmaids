@@ -35,7 +35,7 @@ export function MarketingNav() {
           <div className="flex items-center gap-2">
             <Link href="/login" className="hidden rounded-full px-4 py-2.5 font-display text-sm font-bold text-indigo-brand transition hover:bg-white/70 sm:inline-block">Sign in</Link>
             <Link href="/book" className="rounded-full bg-orange-brand px-4 py-2.5 font-display text-[13px] font-extrabold text-[#2A1A40] shadow-[0_10px_22px_-10px_rgba(242,150,14,.7)] transition hover:brightness-105 md:px-5 md:text-sm">Book a service</Link>
-            {/* Hamburger — mobile/tablet only */}
+            {/* Hamburger, mobile/tablet only */}
             <button
               onClick={() => setOpen((v) => !v)}
               aria-label="Toggle menu"

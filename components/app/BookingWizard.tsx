@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { ShieldCheck, Lock, Gift } from "lucide-react";
 import { computePrice, type Recurrence } from "@/lib/pricing";
 import { formatZar } from "@/lib/money";
 import { servicePhoto } from "@/lib/service-photos";
@@ -131,9 +132,9 @@ export function BookingWizard({
               <h2 className="font-display text-[30px] font-extrabold leading-[1.12] tracking-tight">Book a sparkling clean in a minute</h2>
               <p className="mt-3 max-w-xs text-[15px] leading-relaxed text-white/80">Choose a service, size and time. You only create your account at the very end.</p>
               <div className="mt-9 flex flex-col gap-3.5 text-sm font-semibold text-white/90">
-                <div>🛡️ Vetted &amp; insured cleaners</div>
-                <div>🔒 Secure Payfast payments</div>
-                <div>🎟️ Earn on every referral</div>
+                <div className="flex items-center gap-2.5"><ShieldCheck size={18} strokeWidth={2.2} /> Vetted &amp; insured cleaners</div>
+                <div className="flex items-center gap-2.5"><Lock size={18} strokeWidth={2.2} /> Secure Payfast payments</div>
+                <div className="flex items-center gap-2.5"><Gift size={18} strokeWidth={2.2} /> Earn on every referral</div>
               </div>
             </>
           ) : (
@@ -172,7 +173,7 @@ export function BookingWizard({
       {/* Step content */}
       <div className="flex min-h-screen flex-col bg-surface md:min-h-0 lg:min-h-[100dvh] lg:overflow-y-auto">
         <div className="mx-auto flex w-full max-w-[600px] flex-1 flex-col lg:py-6">
-      {/* STEP 0 — choose service */}
+      {/* STEP 0, choose service */}
       {step === 0 && (
         <div className="flex-1">
           <div className="flex items-center gap-3 px-5 pb-4 pt-2">
@@ -208,7 +209,7 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* STEP 1 — configure */}
+      {/* STEP 1, configure */}
       {step === 1 && (
         <>
           <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
@@ -253,7 +254,7 @@ export function BookingWizard({
         </>
       )}
 
-      {/* STEP 2 — area */}
+      {/* STEP 2, area */}
       {step === 2 && (
         <>
           <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
@@ -276,7 +277,7 @@ export function BookingWizard({
         </>
       )}
 
-      {/* STEP 3 — schedule */}
+      {/* STEP 3, schedule */}
       {step === 3 && (
         <>
           <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
@@ -322,7 +323,7 @@ export function BookingWizard({
         </>
       )}
 
-      {/* STEP 4 — review */}
+      {/* STEP 4, review */}
       {step === 4 && (
         <>
           <div className="flex items-center gap-3 px-5 pb-3.5 pt-2">
@@ -359,7 +360,7 @@ export function BookingWizard({
             {!loggedIn && (
               <div className="mb-3.5 card p-4">
                 <div className="mb-1 font-display text-[15px] font-bold">Your details</div>
-                <div className="mb-3 text-[12.5px] text-muted">Create your account to confirm — or use your existing email &amp; password to sign in.</div>
+                <div className="mb-3 text-[12.5px] text-muted">Create your account to confirm, or use your existing email &amp; password to sign in.</div>
                 <div className="flex flex-col gap-2.5">
                   <input value={acctName} onChange={(e) => setAcctName(e.target.value)} placeholder="Full name" autoComplete="name" className="field bg-white" />
                   <input value={acctEmail} onChange={(e) => setAcctEmail(e.target.value)} type="email" placeholder="Email" autoComplete="email" className="field bg-white" />
@@ -371,7 +372,11 @@ export function BookingWizard({
                   </div>
                   {guestRef.trim() && <div className="text-[12px] font-semibold text-magenta-brand">🎉 {formatZar(settings.firstBookingDiscountCents)} first-booking discount applied</div>}
                 </div>
-                <p className="mt-2 text-center text-[11.5px] text-muted-faint">By continuing you agree to our Terms &amp; Privacy Policy.</p>
+                <p className="mt-2 text-center text-[11.5px] text-muted-faint">
+                  By continuing you agree to our{" "}
+                  <Link href="/terms" className="font-semibold text-magenta-brand">Terms</Link> &amp;{" "}
+                  <Link href="/privacy" className="font-semibold text-magenta-brand">Privacy Policy</Link>.
+                </p>
               </div>
             )}
 

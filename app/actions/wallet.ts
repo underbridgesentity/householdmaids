@@ -24,7 +24,7 @@ export async function saveBankAccountAction(formData: FormData): Promise<void> {
   const user = await assertRole("CUSTOMER", "HELPER");
   const parsed = bankSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) throw new Error("Invalid bank details");
-  // Canonical bank blob shape: { bank, accountNumber, type } — matches the helper
+  // Canonical bank blob shape: { bank, accountNumber, type }, matches the helper
   // writer and the admin payout reader.
   await prisma.user.update({
     where: { id: user.id },
