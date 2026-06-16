@@ -13,11 +13,14 @@ type Prediction = { description: string; placeId: string };
 export function AddressAutocomplete({
   value,
   onChange,
+  onSelect,
   placeholder = "Street address",
   className = "",
 }: {
   value: string;
   onChange: (v: string) => void;
+  /** Fired only when a real suggestion is picked (not on free typing). */
+  onSelect?: (prediction: Prediction) => void;
   placeholder?: string;
   className?: string;
 }) {
@@ -68,6 +71,7 @@ export function AddressAutocomplete({
   function pick(p: Prediction) {
     justPicked.current = true;
     onChange(p.description);
+    onSelect?.(p);
     setPredictions([]);
     setOpen(false);
     setActiveIdx(-1);

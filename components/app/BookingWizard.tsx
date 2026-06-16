@@ -42,7 +42,10 @@ export function BookingWizard({
   const [baths, setBaths] = useState(1);
   const [hours, setHours] = useState(3);
   const [addonIds, setAddonIds] = useState<string[]>([]);
-  const [areaId, setAreaId] = useState(areas[0]?.id);
+  // Area is derived from the chosen address; no default so it can't silently mismatch.
+  const [areaId, setAreaId] = useState("");
+  const [areaAutoDetected, setAreaAutoDetected] = useState(false);
+  const [showAreaPicker, setShowAreaPicker] = useState(false);
   const [address, setAddress] = useState("");
   const [dateIso, setDateIso] = useState(dateOptions[1]?.iso ?? dateOptions[0]?.iso);
   const [time, setTime] = useState("09:00");
@@ -77,6 +80,28 @@ export function BookingWizard({
 
   const toggleAddon = (id: string) =>
     setAddonIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+
+  // Map a chosen Google address to one of our service areas, so the customer
+  // never has to pick it separately (and can't pick one that contradicts the
+  // address). Some areas have alternate names (e.g. eMalahleni / Witbank).
+  const handleAddressSelect = (p: { description: string }) => {
+    const aliases: Record<string, string[]> = { "eMalahleni (Witbank)": ["emalahleni", "witbank"] };
+    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const has = (k: string) => new RegExp(`\\b${esc(k)}\\b`, "i").test(p.description);
+    // Pass 1: full area name or a known alias.
+    let match = areas.find((a) => (aliases[a.name] ?? [a.name]).some(has));
+    // Pass 2: looser first-word match (e.g. "Pretoria" -> Pretoria CBD/East).
+    if (!match) match = areas.find((a) => { const w = a.name.split(/[\s(]/)[0]; return w.length >= 4 && has(w); });
+    if (match) {
+      setAreaId(match.id);
+      setAreaAutoDetected(true);
+      setShowAreaPicker(false);
+    } else {
+      setAreaId("");
+      setAreaAutoDetected(false);
+      setShowAreaPicker(true);
+    }
+  };
 
   const guestReady = loggedIn || (acctName.trim().length >= 2 && /.+@.+\..+/.test(acctEmail) && acctPassword.length >= 8);
 
@@ -292,15 +317,40 @@ export function BookingWizard({
           </div>
           <div className="flex-1 px-[18px]">
             <label className="mb-1.5 block px-0.5 font-display text-sm font-bold text-muted-label">Street address</label>
-            <div className="mb-4"><AddressAutocomplete value={address} onChange={setAddress} placeholder="Start typing your address" /></div>
-            <div className="mb-3 px-0.5 font-display text-sm font-bold text-muted-label">Select your area</div>
-            <div className="grid grid-cols-3 gap-2.5">
-              {areas.map((a) => (
-                <button key={a.id} onClick={() => setAreaId(a.id)} aria-pressed={a.id === areaId} className={`rounded-[13px] border-[1.5px] px-2 py-2.5 text-center text-[13.5px] font-bold ${a.id === areaId ? "border-magenta-brand bg-surface-pink text-magenta-brand" : "border-line-input bg-white text-[#5f5878]"}`}>{a.name}</button>
-              ))}
-            </div>
+            <div className="mb-4"><AddressAutocomplete value={address} onChange={setAddress} onSelect={handleAddressSelect} placeholder="Start typing your address" /></div>
+
+            {areaId && areaAutoDetected && !showAreaPicker ? (
+              // Area detected from the chosen address, with an option to correct it.
+              <div className="flex items-center gap-3 rounded-[15px] border-[1.5px] border-magenta-brand bg-surface-pink p-3.5">
+                <span className="text-xl">📍</span>
+                <div className="flex-1">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-muted-label">Your area</div>
+                  <div className="font-display text-[15px] font-bold text-magenta-brand">{areas.find((a) => a.id === areaId)?.name}</div>
+                </div>
+                <button onClick={() => setShowAreaPicker(true)} className="text-[13px] font-bold text-indigo-brand underline">Change</button>
+              </div>
+            ) : (
+              <>
+                <div className="mb-2 px-0.5 font-display text-sm font-bold text-muted-label">Select your area</div>
+                {address.trim().length >= 5 && !areaId && (
+                  <div className="mb-3 rounded-[12px] bg-surface-lav px-3.5 py-2.5 text-[12.5px] text-muted">
+                    We couldn&apos;t match that address to a service area. Pick the closest one below.
+                  </div>
+                )}
+                <div className="grid grid-cols-3 gap-2.5">
+                  {areas.map((a) => (
+                    <button key={a.id} onClick={() => { setAreaId(a.id); setAreaAutoDetected(false); }} aria-pressed={a.id === areaId} className={`rounded-[13px] border-[1.5px] px-2 py-2.5 text-center text-[13.5px] font-bold ${a.id === areaId ? "border-magenta-brand bg-surface-pink text-magenta-brand" : "border-line-input bg-white text-[#5f5878]"}`}>{a.name}</button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          <FooterButton onClick={() => setStep(3)} label="Continue to schedule ›" disabled={address.trim().length < 5} hint={address.trim().length < 5 ? "Enter your street address to continue" : undefined} />
+          <FooterButton
+            onClick={() => setStep(3)}
+            label="Continue to schedule ›"
+            disabled={address.trim().length < 5 || !areaId}
+            hint={address.trim().length < 5 ? "Enter your street address to continue" : !areaId ? "Select your area to continue" : undefined}
+          />
         </>
       )}
 
