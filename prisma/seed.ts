@@ -5,9 +5,12 @@ import { encrypt } from "../lib/crypto";
 const prisma = new PrismaClient();
 
 const AREAS = [
+  // Gauteng
   "Sandton", "Midrand", "Centurion", "Pretoria East", "Pretoria CBD",
   "Kempton Park", "Benoni", "Boksburg", "Roodepoort", "Randburg",
   "Fourways", "Soweto", "Alberton", "Edenvale", "Germiston",
+  // Mpumalanga
+  "Middelburg", "eMalahleni (Witbank)", "Secunda",
 ];
 
 const SERVICES = [
