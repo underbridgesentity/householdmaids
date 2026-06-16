@@ -22,8 +22,11 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://*.payfast.co.za https://sandbox.payfast.co.za",
-      "form-action 'self' https://www.payfast.co.za https://sandbox.payfast.co.za",
+      "connect-src 'self' https://*.payfast.co.za https://payfast.co.za",
+      // Payfast checkout posts to www.payfast.co.za then redirects through other
+      // subdomains (w1w/w2w/sandbox); form-action must allow the whole domain or
+      // the browser blocks the navigation mid-redirect.
+      "form-action 'self' https://*.payfast.co.za https://payfast.co.za",
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
