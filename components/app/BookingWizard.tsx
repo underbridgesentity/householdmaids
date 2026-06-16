@@ -59,11 +59,13 @@ export function BookingWizard({
   const [acctPhone, setAcctPhone] = useState("");
   const [acctPassword, setAcctPassword] = useState("");
   const [guestRef, setGuestRef] = useState(presetRef ?? "");
+  // Guests choose explicitly whether they're new (create) or returning (sign in).
+  const [authMode, setAuthMode] = useState<"create" | "signin">("create");
 
   const service = services.find((s) => s.id === serviceId)!;
   const effectiveHours = Math.max(hours, service.mode === "HOURS" ? service.minHours : 0);
   // Discount preview: signed-in first-booking toggle, or a guest who entered a code.
-  const previewReferral = loggedIn ? applyReferral && referralEligible : guestRef.trim().length > 0;
+  const previewReferral = loggedIn ? applyReferral && referralEligible : authMode === "create" && guestRef.trim().length > 0;
 
   const breakdown = useMemo(
     () =>
@@ -103,7 +105,12 @@ export function BookingWizard({
     }
   };
 
-  const guestReady = loggedIn || (acctName.trim().length >= 2 && /.+@.+\..+/.test(acctEmail) && acctPassword.length >= 8);
+  const emailValid = /.+@.+\..+/.test(acctEmail);
+  const guestReady =
+    loggedIn ||
+    (authMode === "create"
+      ? acctName.trim().length >= 2 && emailValid && acctPassword.length >= 8
+      : emailValid && acctPassword.length >= 1);
 
   async function submit() {
     if (!guestReady) return;
@@ -147,7 +154,9 @@ export function BookingWizard({
     <button onClick={back} aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-lav text-lg text-indigo-brand">‹</button>
   );
   const area = areas.find((a) => a.id === areaId);
-  const dateLabel = dateOptions.find((d) => d.iso === dateIso);
+  // Use the server-provided label for the quick-pick chips; format any other
+  // (further-future) date the customer chose via the date input.
+  const dateLabel = dateOptions.find((d) => d.iso === dateIso) ?? isoToDateLabel(dateIso);
   const configSummary =
     service.mode === "ROOMS"
       ? `${beds} bed · ${baths} bath`
@@ -366,7 +375,7 @@ export function BookingWizard({
           </div>
           <div className="flex-1 px-[18px]">
             <div className="mb-3 px-0.5 font-display text-sm font-bold text-muted-label">Date</div>
-            <div className="mb-5 grid grid-cols-5 gap-2">
+            <div className="mb-3 grid grid-cols-5 gap-2">
               {dateOptions.map((d) => (
                 <button key={d.iso} onClick={() => setDateIso(d.iso)} className={`rounded-[13px] border-[1.5px] py-2.5 text-center ${d.iso === dateIso ? "border-magenta-brand bg-surface-pink text-magenta-brand" : "border-line-input bg-white text-[#5f5878]"}`}>
                   <div className="text-sm font-extrabold">{d.label}</div>
@@ -374,6 +383,16 @@ export function BookingWizard({
                 </button>
               ))}
             </div>
+            <label className="mb-5 flex items-center justify-between gap-3 rounded-[13px] border-[1.5px] border-line-input bg-white px-4 py-3">
+              <span className="text-[13px] font-semibold text-muted-label">Or choose another date</span>
+              <input
+                type="date"
+                min={dateOptions[0]?.iso}
+                value={dateIso}
+                onChange={(e) => e.target.value && setDateIso(e.target.value)}
+                className="bg-transparent text-[13.5px] font-bold text-indigo-brand outline-none"
+              />
+            </label>
             <div className="mb-3 px-0.5 font-display text-sm font-bold text-muted-label">Start time</div>
             <div className="mb-5 grid grid-cols-5 gap-2">
               {TIMES.map((t) => (
@@ -436,18 +455,44 @@ export function BookingWizard({
 
             {!loggedIn && (
               <div className="mb-3.5 card p-4">
-                <div className="mb-1 font-display text-[15px] font-bold">Your details</div>
-                <div className="mb-3 text-[12.5px] text-muted">Create your account to confirm, or use your existing email &amp; password to sign in.</div>
+                {/* Clear toggle: new customers create an account, returning ones sign in. */}
+                <div className="mb-3.5 flex rounded-[13px] bg-surface-lav p-1">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("create")}
+                    className={`flex-1 rounded-[10px] py-2 text-[13.5px] font-bold transition ${authMode === "create" ? "bg-white text-indigo-brand shadow-sm" : "text-muted-label"}`}
+                  >
+                    I&apos;m new
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("signin")}
+                    className={`flex-1 rounded-[10px] py-2 text-[13.5px] font-bold transition ${authMode === "signin" ? "bg-white text-indigo-brand shadow-sm" : "text-muted-label"}`}
+                  >
+                    I have an account
+                  </button>
+                </div>
+                <div className="mb-3 text-[12.5px] text-muted">
+                  {authMode === "create" ? "Create your account to confirm your booking." : "Sign in with your email and password to confirm."}
+                </div>
                 <div className="flex flex-col gap-2.5">
-                  <input value={acctName} onChange={(e) => setAcctName(e.target.value)} aria-label="Full name" placeholder="Full name" autoComplete="name" className="field bg-white" />
+                  {authMode === "create" && (
+                    <input value={acctName} onChange={(e) => setAcctName(e.target.value)} aria-label="Full name" placeholder="Full name" autoComplete="name" className="field bg-white" />
+                  )}
                   <input value={acctEmail} onChange={(e) => setAcctEmail(e.target.value)} type="email" aria-label="Email" placeholder="Email" autoComplete="email" className="field bg-white" />
-                  <input value={acctPhone} onChange={(e) => setAcctPhone(e.target.value)} type="tel" aria-label="Mobile number" placeholder="Mobile number (optional)" autoComplete="tel" className="field bg-white" />
-                  <input value={acctPassword} onChange={(e) => setAcctPassword(e.target.value)} type="password" aria-label="Create a password" placeholder="Create a password (min 8 chars)" autoComplete="new-password" className="field bg-white" />
-                  <div className="flex items-center gap-2.5 rounded-2xl border border-dashed border-[#d9c8e6] bg-surface-lav px-3.5 py-2.5">
-                    <span className="text-lg">🎟️</span>
-                    <input value={guestRef} onChange={(e) => setGuestRef(e.target.value)} aria-label="Referral code" placeholder="Referral code (optional)" className="w-full border-none bg-transparent text-[14px] font-bold uppercase tracking-wide text-magenta-brand outline-none placeholder:font-normal placeholder:normal-case placeholder:text-muted-faint" />
-                  </div>
-                  {guestRef.trim() && <div className="text-[12px] font-semibold text-magenta-brand">🎉 {formatZar(settings.firstBookingDiscountCents)} first-booking discount applied</div>}
+                  {authMode === "create" && (
+                    <input value={acctPhone} onChange={(e) => setAcctPhone(e.target.value)} type="tel" aria-label="Mobile number" placeholder="Mobile number (optional)" autoComplete="tel" className="field bg-white" />
+                  )}
+                  <input value={acctPassword} onChange={(e) => setAcctPassword(e.target.value)} type="password" aria-label="Password" placeholder={authMode === "create" ? "Create a password (min 8 chars)" : "Your password"} autoComplete={authMode === "create" ? "new-password" : "current-password"} className="field bg-white" />
+                  {authMode === "create" && (
+                    <>
+                      <div className="flex items-center gap-2.5 rounded-2xl border border-dashed border-[#d9c8e6] bg-surface-lav px-3.5 py-2.5">
+                        <span className="text-lg">🎟️</span>
+                        <input value={guestRef} onChange={(e) => setGuestRef(e.target.value)} aria-label="Referral code" placeholder="Referral code (optional)" className="w-full border-none bg-transparent text-[14px] font-bold uppercase tracking-wide text-magenta-brand outline-none placeholder:font-normal placeholder:normal-case placeholder:text-muted-faint" />
+                      </div>
+                      {guestRef.trim() && <div className="text-[12px] font-semibold text-magenta-brand">🎉 {formatZar(settings.firstBookingDiscountCents)} first-booking discount applied</div>}
+                    </>
+                  )}
                 </div>
                 <p className="mt-2 text-center text-[11.5px] text-muted-faint">
                   By continuing you agree to our{" "}
@@ -477,11 +522,17 @@ export function BookingWizard({
               </div>
             )}
             <button disabled={submitting || !guestReady} onClick={submit} className="btn-primary w-full disabled:opacity-50">
-              {submitting ? "Preparing payment…" : loggedIn ? "Continue to payment ›" : "Create account & pay ›"}
+              {submitting ? "Preparing payment…" : loggedIn ? "Continue to payment ›" : authMode === "create" ? "Create account & pay ›" : "Sign in & pay ›"}
             </button>
             {!loggedIn && (
               <p className="mt-2.5 text-center text-[12.5px] text-muted-soft">
-                Already have an account? Just enter your email &amp; password above.
+                {authMode === "create" ? (
+                  <>Already have an account?{" "}
+                    <button type="button" onClick={() => setAuthMode("signin")} className="font-bold text-magenta-brand underline">Sign in</button> instead.</>
+                ) : (
+                  <>New to Household Maids?{" "}
+                    <button type="button" onClick={() => setAuthMode("create")} className="font-bold text-magenta-brand underline">Create an account</button>.</>
+                )}
               </p>
             )}
           </div>
@@ -491,6 +542,17 @@ export function BookingWizard({
       </div>
     </div>
   );
+}
+
+/** Formats an ISO date (YYYY-MM-DD) into the same {label, sub} shape as the
+ *  server-provided quick-pick options, for custom future dates. */
+function isoToDateLabel(iso: string): DateOption {
+  const d = new Date(`${iso}T12:00:00`);
+  return {
+    iso,
+    label: d.toLocaleDateString("en-ZA", { weekday: "short", day: "numeric" }),
+    sub: d.toLocaleDateString("en-ZA", { month: "short" }),
+  };
 }
 
 function Counter({ label, sub, value, onDec, onInc }: { label: string; sub: string; value: number; onDec: () => void; onInc: () => void }) {

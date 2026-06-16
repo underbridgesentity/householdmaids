@@ -20,11 +20,13 @@ import { audit } from "@/lib/audit";
 export type BookingState = { error?: string } | undefined;
 
 // Account fields collected at the end of a guest booking.
+// fullName/password strength are only required when CREATING a new account
+// (a returning customer signing in supplies just email + their password).
 const guestAccountSchema = z.object({
-  fullName: z.string().min(2).max(80),
+  fullName: z.string().max(80).optional().or(z.literal("")),
   email: z.string().email().max(120),
   phone: z.string().max(20).optional().or(z.literal("")),
-  password: z.string().min(8, "Use at least 8 characters").max(100),
+  password: z.string().min(1).max(100),
   referralCode: z.string().max(32).optional().or(z.literal("")),
 });
 
@@ -79,10 +81,13 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
     if (existing) {
       // Returning customer finishing checkout, verify their password to sign in.
       if (existing.role !== "CUSTOMER" || !(await verifyPassword(existing.passwordHash, password))) {
-        return { error: "An account already exists for this email. Enter your correct password, or sign in first." };
+        return { error: "That email and password don't match. Check your password, or use 'I'm new' to create an account." };
       }
       customerId = existing.id;
     } else {
+      // Creating a brand-new account needs a name and a strong password.
+      if (!fullName || fullName.trim().length < 2) return { error: "Please enter your name to create an account." };
+      if (password.length < 8) return { error: "Your password must be at least 8 characters." };
       const code = referralCode?.trim().toUpperCase();
       const referrerCode = code
         ? await prisma.referralCode.findUnique({ where: { code } })

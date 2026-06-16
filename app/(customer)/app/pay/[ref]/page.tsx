@@ -9,9 +9,10 @@ import { simulatePaymentAction } from "@/app/actions/booking";
 
 export const dynamic = "force-dynamic";
 
-export default async function PayPage({ params }: { params: Promise<{ ref: string }> }) {
+export default async function PayPage({ params, searchParams }: { params: Promise<{ ref: string }>; searchParams: Promise<{ cancelled?: string }> }) {
   const user = await requireRole("CUSTOMER");
   const { ref } = await params;
+  const { cancelled } = await searchParams;
 
   const booking = await prisma.booking.findUnique({ where: { reference: ref }, include: { service: true, area: true } });
   if (!booking || booking.customerId !== user.id) notFound();
@@ -34,6 +35,12 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
   const simulate = simulatePaymentAction.bind(null, booking.reference);
   const isDev = process.env.NODE_ENV !== "production";
   const whenLabel = new Date(booking.scheduledAt).toLocaleString("en-ZA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const configLabel =
+    booking.service.mode === "ROOMS"
+      ? `${booking.beds} bed · ${booking.baths} bath`
+      : booking.service.mode === "HOURS"
+        ? `${booking.hours} hours`
+        : "Selected extras";
 
   return (
     <div className="min-h-[100dvh] bg-surface lg:flex">
@@ -65,14 +72,31 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
       {/* Payment */}
       <div className="flex flex-1 flex-col p-6 lg:items-center lg:justify-center lg:p-9">
         <div className="mx-auto w-full max-w-[440px]">
-          <div className="relative mb-4 overflow-hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-card">
-            <div className="absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-white/10" />
-            <div className="mb-7 flex items-center justify-between"><span className="text-[13px] opacity-85">Household Maids</span><span className="text-[22px]">💳</span></div>
-            <div className="mb-4 font-display text-[19px] tracking-[.12em]">•••• •••• •••• 4471</div>
-            <div className="flex justify-between text-xs opacity-85"><span>{(user.name ?? "CUSTOMER").toUpperCase()}</span><span>09/27</span></div>
+          <h2 className="mb-1 font-display text-xl font-extrabold">Review &amp; pay</h2>
+          <p className="mb-4 text-[13px] text-muted">Check your booking, then continue to Payfast to pay securely.</p>
+
+          {cancelled && (
+            <div className="mb-4 rounded-[13px] border border-[#f0d6d6] bg-[#fdf3f3] px-4 py-3 text-[13px] font-semibold text-[#d05656]">
+              That payment didn&apos;t go through (it was cancelled or declined by Payfast). You can try again below.
+            </div>
+          )}
+
+          {/* Booking review */}
+          <div className="card p-4">
+            <div className="flex items-center gap-3 border-b border-[#f0ebf6] pb-3.5">
+              <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] bg-surface-lav text-[22px]">{booking.service.emoji}</div>
+              <div className="flex-1">
+                <div className="font-display text-[15.5px] font-bold">{booking.service.name}</div>
+                <div className="text-[12.5px] text-muted">{configLabel}</div>
+              </div>
+              <div className="font-display text-[18px] font-extrabold text-indigo-brand">{formatZar(booking.totalCents)}</div>
+            </div>
+            <div className="flex justify-between gap-3 py-2 text-[13.5px]"><span className="text-muted">📍 Where</span><span className="text-right font-semibold">{booking.addressText}, {booking.area.name}</span></div>
+            <div className="flex justify-between gap-3 py-1 text-[13.5px]"><span className="text-muted">🗓 When</span><span className="font-semibold">{whenLabel}</span></div>
+            <div className="flex justify-between gap-3 py-1 text-[13.5px]"><span className="text-muted">Reference</span><span className="font-semibold">{booking.reference}</span></div>
           </div>
 
-          <div className="flex items-center gap-2.5 rounded-[13px] bg-[#eef6f0] px-3.5 py-3">
+          <div className="mt-4 flex items-center gap-2.5 rounded-[13px] bg-[#eef6f0] px-3.5 py-3">
             <span className="text-[17px]">🔐</span>
             <span className="text-[12.5px] leading-snug text-money-dark">You&apos;ll be taken to Payfast to complete payment securely. A referral reward is earned once your payment clears.</span>
           </div>
@@ -81,7 +105,7 @@ export default async function PayPage({ params }: { params: Promise<{ ref: strin
             {Object.entries(fields).map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <button type="submit" className="btn-primary w-full">Pay {formatZar(booking.totalCents)} ›</button>
+            <button type="submit" className="btn-primary w-full">Pay {formatZar(booking.totalCents)} with Payfast ›</button>
           </form>
 
           {isDev && (
