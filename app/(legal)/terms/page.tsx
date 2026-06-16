@@ -14,7 +14,7 @@ export default function TermsPage() {
       </p>
 
       <Section heading="1. The service">
-        <p>Household Maids connects customers with vetted, independent cleaning professionals (&quot;helpers&quot;) across Gauteng. We facilitate bookings, payments and communication; helpers perform the cleaning services.</p>
+        <p>Household Maids connects customers with vetted, independent cleaning professionals (&quot;helpers&quot;) across Gauteng and Mpumalanga. We facilitate bookings, payments and communication; helpers perform the cleaning services.</p>
       </Section>
       <Section heading="2. Accounts">
         <p>You must provide accurate information and keep your login credentials secure. You are responsible for activity under your account. You must be 18 or older to use the platform.</p>

@@ -20,7 +20,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         <div className="relative z-10">
           <h1 className="font-display text-4xl font-extrabold leading-tight">A sparkling home,<br />a click away.</h1>
           <p className="mt-4 max-w-sm text-white/80">
-            Book trusted, vetted cleaners across Gauteng, and earn real cash every time you refer a friend.
+            Book trusted, vetted cleaners across Gauteng and Mpumalanga, and earn real cash every time you refer a friend.
           </p>
         </div>
         <Link href="/helper" className="relative z-10 text-sm text-white/75 underline">Want to clean with us? Become a helper</Link>

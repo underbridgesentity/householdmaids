@@ -9,7 +9,7 @@ export function MarketingFooter() {
         <div className="max-w-xs">
           <Logo variant="white" height={32} />
           <p className="mt-3.5 text-[13.5px] leading-relaxed text-white/60">
-            Trusted home &amp; commercial cleaning across Gauteng. Book in a minute, earn on every referral.
+            Trusted home &amp; commercial cleaning across Gauteng and Mpumalanga. Book in a minute, earn on every referral.
           </p>
         </div>
         <div className="flex flex-wrap gap-14">

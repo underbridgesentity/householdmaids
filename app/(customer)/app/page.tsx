@@ -70,7 +70,7 @@ export default async function HomePage() {
           <Link href="/app/book" className="block card p-5 text-center shadow-card">
             <div className="text-3xl">🧹</div>
             <div className="mt-2 font-display font-bold">Book your first clean</div>
-            <div className="text-[13px] text-muted">Trusted, vetted cleaners across Gauteng.</div>
+            <div className="text-[13px] text-muted">Trusted, vetted cleaners across Gauteng and Mpumalanga.</div>
           </Link>
         )}
 

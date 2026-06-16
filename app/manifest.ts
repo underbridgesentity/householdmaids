@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Household Maids",
     short_name: "Household Maids",
-    description: "Book trusted, vetted cleaners across Gauteng, and earn cash on every referral.",
+    description: "Book trusted, vetted cleaners across Gauteng and Mpumalanga, and earn cash on every referral.",
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "About us",
   description:
-    "Household Maids is a Gauteng cleaning service operated by Mukhoni Cleaning Specialists. Vetted, insured cleaners for homes and businesses, and rewards on every referral.",
+    "Household Maids is a Gauteng and Mpumalanga cleaning service operated by Mukhoni Cleaning Specialists. Vetted, insured cleaners for homes and businesses, and rewards on every referral.",
 };
 
 const VALUES = [
@@ -51,10 +51,10 @@ export default async function AboutPage() {
             <span className="text-[12.5px] font-bold tracking-wide text-white">OUR STORY</span>
           </div>
           <h1 className="font-display text-[clamp(32px,4.4vw,48px)] font-extrabold leading-[1.06] tracking-tight text-white">
-            Cleaning Gauteng cares about, <span className="text-orange-brand">people first.</span>
+            Cleaning Gauteng and Mpumalanga trust, <span className="text-orange-brand">people first.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-white/80">
-            Household Maids connects homes and businesses across Gauteng with trusted, vetted cleaners, and rewards the
+            Household Maids connects homes and businesses across Gauteng and Mpumalanga with trusted, vetted cleaners, and rewards the
             community that grows us. We are proudly operated by Mukhoni Cleaning Specialists (Pty) Ltd.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
@@ -74,7 +74,7 @@ export default async function AboutPage() {
           <h2 className="font-display text-[30px] font-extrabold leading-tight tracking-tight">A modern cleaning service built on trust</h2>
           <div className="mt-4 flex flex-col gap-3.5 text-[15.5px] leading-relaxed text-[#4a4463]">
             <p>
-              We started Household Maids because booking a reliable, trustworthy cleaner in Gauteng was harder than it
+              We started Household Maids because booking a reliable, trustworthy cleaner in Gauteng or Mpumalanga was harder than it
               should be. People wanted someone vetted and insured. Cleaners wanted steady, fairly-paid work. We built one
               platform that serves both.
             </p>
@@ -83,7 +83,7 @@ export default async function AboutPage() {
               cleaner on the platform is screened and supported, and every customer who refers a friend earns {reward}.
             </p>
             <p>
-              We are a local team operating from Kempton Park and Middelburg, growing carefully across Gauteng, one
+              We are a local team operating from Kempton Park and Middelburg, growing carefully across Gauteng and Mpumalanga, one
               spotless home and happy cleaner at a time.
             </p>
           </div>
@@ -96,7 +96,7 @@ export default async function AboutPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white"><Leaf size={22} strokeWidth={2.2} /></div>
           <h2 className="font-display text-[26px] font-extrabold tracking-tight text-indigo-brand">Our mission</h2>
           <p className="mt-3 text-[17px] leading-relaxed text-[#4a4463]">
-            To make professional cleaning effortless and trustworthy for every Gauteng home and business, while creating
+            To make professional cleaning effortless and trustworthy for every home and business we serve, while creating
             dignified, fairly-paid work for the cleaners who make it happen.
           </p>
         </div>
@@ -147,7 +147,7 @@ export default async function AboutPage() {
           <div className="mb-2 flex items-center justify-center gap-2 text-[13px] font-extrabold uppercase tracking-[.12em] text-magenta-brand">
             <MapPin size={15} strokeWidth={2.4} /> Where we clean
           </div>
-          <h2 className="font-display text-[32px] font-extrabold tracking-tight">Serving {areas.length} areas across Gauteng</h2>
+          <h2 className="font-display text-[32px] font-extrabold tracking-tight">Serving {areas.length} areas across Gauteng and Mpumalanga</h2>
         </div>
         <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-2.5">
           {areas.map((a) => (

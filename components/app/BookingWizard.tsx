@@ -87,7 +87,7 @@ export function BookingWizard({
     const fd = new FormData();
     fd.set("serviceId", serviceId);
     fd.set("areaId", areaId);
-    fd.set("addressText", address || areas.find((a) => a.id === areaId)?.name || "Gauteng");
+    fd.set("addressText", address || areas.find((a) => a.id === areaId)?.name || "Not specified");
     fd.set("beds", String(beds));
     fd.set("baths", String(baths));
     fd.set("hours", String(effectiveHours));
@@ -287,7 +287,7 @@ export function BookingWizard({
             <BackBtn />
             <div>
               <div className="font-display text-xl font-extrabold">Where are you?</div>
-              <div className="text-[12.5px] text-muted">Step 2 of 4 · Gauteng</div>
+              <div className="text-[12.5px] text-muted">Step 2 of 4</div>
             </div>
           </div>
           <div className="flex-1 px-[18px]">

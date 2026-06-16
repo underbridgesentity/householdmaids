@@ -34,14 +34,14 @@ export default async function LandingPage() {
           <div>
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5">
               <span className="h-2 w-2 rounded-full bg-orange-brand" />
-              <span className="text-[12.5px] font-bold tracking-wide text-white">NOW LAUNCHING IN GAUTENG</span>
+              <span className="text-[12.5px] font-bold tracking-wide text-white">NOW IN GAUTENG &amp; MPUMALANGA</span>
             </div>
             <h1 className="font-display text-[clamp(34px,4.6vw,54px)] font-extrabold leading-[1.04] tracking-tight text-white">
               For all your<br />cleaning needs - <br />
               <span className="text-orange-brand">rewarded.</span>
             </h1>
             <p className="mt-4 max-w-md text-[17px] leading-relaxed text-white/80">
-              Book trusted, vetted cleaners across Gauteng in under a minute, then earn {reward} every time a friend
+              Book trusted, vetted cleaners across Gauteng and Mpumalanga in under a minute, then earn {reward} every time a friend
               books with your referral link.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
@@ -81,7 +81,7 @@ export default async function LandingPage() {
 
       {/* Stats, honest, launch-appropriate facts */}
       <section className="grid grid-cols-2 gap-px border-y border-line bg-line md:grid-cols-4">
-        {[[`${areas.length}`, "Gauteng areas"], ["100%", "Vetted & insured"], [reward, "Per referral"], ["Fri", "Weekly payouts"]].map(
+        {[[`${areas.length}`, "Service areas"], ["100%", "Vetted & insured"], [reward, "Per referral"], ["Fri", "Weekly payouts"]].map(
           ([n, l], i) => (
             <div key={l} className="bg-white px-6 py-6 text-center">
               <div className={`font-display text-[28px] font-extrabold ${i === 2 ? "text-magenta-brand" : "text-indigo-brand"}`}>{n}</div>
@@ -213,7 +213,7 @@ export default async function LandingPage() {
             <div className="mb-3 text-[34px]">🧽</div>
             <h2 className="mb-2.5 font-display text-[30px] font-extrabold tracking-tight">Earn a steady income as a cleaner</h2>
             <p className="mb-5 max-w-xl text-base leading-relaxed text-[#5f5878]">
-              Join our vetted team across Gauteng. Choose your areas, set your schedule, and get paid every Friday.
+              Join our vetted team across Gauteng and Mpumalanga. Choose your areas, set your schedule, and get paid every Friday.
             </p>
             <Link href="/helper" className="inline-block rounded-xl bg-brand-gradient px-7 py-3.5 font-display font-bold text-white">Apply to become a helper</Link>
           </div>
@@ -222,7 +222,7 @@ export default async function LandingPage() {
 
       {/* Testimonials */}
       <section className="px-6 py-14 md:px-9">
-        <h2 className="mb-8 text-center font-display text-[32px] font-extrabold tracking-tight">Loved across Gauteng</h2>
+        <h2 className="mb-8 text-center font-display text-[32px] font-extrabold tracking-tight">Loved across Gauteng and Mpumalanga</h2>
         <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             ["“Booking took a minute and the clean was immaculate. I’ve already earned from referring friends.”", "Refilwe M.", "Sandton", "R", "#efe5f6", "#4A2C7C"],
@@ -246,7 +246,7 @@ export default async function LandingPage() {
 
       {/* Areas */}
       <section className="px-6 pb-14 text-center md:px-9">
-        <h3 className="mb-4 font-display text-xl font-bold">Now serving across Gauteng</h3>
+        <h3 className="mb-4 font-display text-xl font-bold">Now serving across Gauteng and Mpumalanga</h3>
         <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-2.5">
           {areas.map((a) => (
             <span key={a.id} className="rounded-full bg-surface-lav px-4 py-2 text-[13.5px] font-semibold text-indigo-brand">{a.name}</span>

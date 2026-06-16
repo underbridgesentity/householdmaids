@@ -32,7 +32,7 @@ export default function HelperIntroPage() {
             Earn a steady income with Household Maids
           </h1>
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/80 md:text-base">
-            Join our vetted team of cleaners across Gauteng. Flexible work, fair pay, and the support you deserve.
+            Join our vetted team of cleaners across Gauteng and Mpumalanga. Flexible work, fair pay, and the support you deserve.
           </p>
 
           <div className="mt-7 flex flex-col gap-3">

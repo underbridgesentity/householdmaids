@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Request a quote",
-  description: "Tell us about your job and we will send a tailored quote, ideal for commercial window cleaning and larger spaces across Gauteng.",
+  description: "Tell us about your job and we will send a tailored quote, ideal for commercial window cleaning and larger spaces across Gauteng and Mpumalanga.",
 };
 
 export default async function QuotePage({ searchParams }: { searchParams: Promise<{ service?: string }> }) {
