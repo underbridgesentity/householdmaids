@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
+// Section links are absolute (/#...) so they work from any marketing page,
+// not just the home page.
 const LINKS: [string, string][] = [
-  ["Services", "#services"],
-  ["How it works", "#how"],
-  ["Refer & earn", "#refer"],
-  ["Contact", "#contact"],
+  ["Services", "/#services"],
+  ["How it works", "/#how"],
+  ["About", "/about"],
+  ["Refer & earn", "/#refer"],
   ["Become a helper", "/helper"],
 ];
 
