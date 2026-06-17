@@ -23,10 +23,13 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https://*.payfast.co.za https://payfast.co.za",
-      // Payfast checkout posts to www.payfast.co.za then redirects through other
-      // subdomains (w1w/w2w/sandbox); form-action must allow the whole domain or
-      // the browser blocks the navigation mid-redirect.
-      "form-action 'self' https://*.payfast.co.za https://payfast.co.za",
+      // Payfast checkout posts to www.payfast.co.za, then redirects through its
+      // own subdomains AND onward to the customer's bank / card processor for the
+      // selected payment method. Those bank/3DS domains can't be enumerated, and
+      // CSP form-action is checked across the whole redirect chain, so we allow
+      // form submission to any HTTPS destination (other schemes stay blocked).
+      // Safe here: the app has no HTML-injection vector that could plant a form.
+      "form-action 'self' https:",
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
