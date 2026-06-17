@@ -168,4 +168,31 @@ export async function markBookingPaid(reference: string, providerRef?: string): 
     }
     await audit({ action: "booking.paid", entity: "Booking", entityId: booking.id, meta: { reference, providerRef } });
   }
+
+  // Now that it's paid, match a vetted helper (CONFIRMED -> HELPER_ASSIGNED).
+  // Without this the booking would sit at "matching a cleaner" forever, since
+  // helpers only see jobs already assigned to them. Best-effort: a matching
+  // failure must not fail the payment confirmation.
+  try {
+    await assignHelper(reference);
+  } catch {
+    /* helper can be assigned later by an admin / retry */
+  }
+}
+
+/**
+ * Assigns the best-rated approved helper in the booking's area to a paid,
+ * still-unassigned booking and moves it to HELPER_ASSIGNED. No-op if the booking
+ * isn't paid/confirmed, already has a helper, or no helper serves the area yet.
+ */
+export async function assignHelper(reference: string): Promise<void> {
+  const booking = await prisma.booking.findUnique({ where: { reference } });
+  if (!booking || booking.paymentStatus !== "PAID" || booking.status !== "CONFIRMED" || booking.helperId) return;
+  const helper = await prisma.helperProfile.findFirst({
+    where: { status: "APPROVED", areas: { some: { id: booking.areaId } } },
+    orderBy: { rating: "desc" },
+  });
+  if (!helper) return; // no helper serves this area yet; leave CONFIRMED for later
+  await prisma.booking.update({ where: { id: booking.id }, data: { status: "HELPER_ASSIGNED", helperId: helper.id } });
+  await notifyUser(booking.customerId, "Cleaner assigned", "A vetted cleaner has been assigned to your booking.");
 }
