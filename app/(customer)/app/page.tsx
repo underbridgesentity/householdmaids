@@ -41,7 +41,7 @@ export default async function HomePage() {
             </div>
           </div>
           <Link href="/app/wallet" className="rounded-[13px] bg-white/15 px-3 py-2 text-right">
-            <div className="text-[10px] uppercase tracking-wide text-white/70">Wallet</div>
+            <div className="text-[10px] uppercase tracking-wide text-white/70">Referral wallet</div>
             <div className="font-display text-[15px] font-bold text-white">{formatZar(wallet.availableCents)}</div>
           </Link>
         </div>
