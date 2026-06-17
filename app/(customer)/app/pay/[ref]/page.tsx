@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/rbac";
 import { formatZar } from "@/lib/money";
 import { Logo } from "@/components/ui/Logo";
 import { payfastConfig, payfastProcessUrl, buildCheckoutFields } from "@/lib/payfast";
-import { simulatePaymentAction } from "@/app/actions/booking";
+import { simulatePaymentAction, cancelBookingAction } from "@/app/actions/booking";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +33,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
   });
   const processUrl = payfastProcessUrl(cfg);
   const simulate = simulatePaymentAction.bind(null, booking.reference);
+  const cancel = cancelBookingAction.bind(null, booking.reference);
   const isDev = process.env.NODE_ENV !== "production";
   const whenLabel = new Date(booking.scheduledAt).toLocaleString("en-ZA", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
   const configLabel =
@@ -115,6 +116,13 @@ export default async function PayPage({ params, searchParams }: { params: Promis
               </button>
             </form>
           )}
+
+          {/* Don't want to pay? Cancel this (unpaid) booking. */}
+          <form action={cancel} className="mt-4 text-center">
+            <button className="text-[12.5px] font-semibold text-muted-soft underline-offset-2 hover:text-[#d05656] hover:underline">
+              Cancel this booking
+            </button>
+          </form>
         </div>
       </div>
     </div>

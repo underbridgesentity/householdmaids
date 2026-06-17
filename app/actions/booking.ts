@@ -174,6 +174,24 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
   redirect(`/app/pay/${reference}`);
 }
 
+/**
+ * Customer cancels their own UNPAID booking (e.g. an abandoned attempt). Paid
+ * bookings can't be self-cancelled here (those go through support/refund).
+ */
+export async function cancelBookingAction(reference: string): Promise<void> {
+  const user = await assertRole("CUSTOMER");
+  const booking = await prisma.booking.findUnique({ where: { reference } });
+  if (!booking || booking.customerId !== user.id) throw new Error("Not found");
+  if (booking.paymentStatus === "PAID") throw new Error("Paid bookings can't be cancelled here");
+  if (booking.status !== "CANCELLED") {
+    await prisma.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
+    await audit({ actorId: user.id, action: "booking.cancelled", entity: "Booking", entityId: reference });
+  }
+  revalidatePath("/app/profile/bookings");
+  revalidatePath(`/app/bookings/${reference}`);
+  redirect("/app/profile/bookings");
+}
+
 /** Dev-only: simulate a successful Payfast payment (no public ITN reachable on localhost). */
 export async function simulatePaymentAction(reference: string): Promise<void> {
   if (process.env.NODE_ENV === "production") throw new Error("Disabled in production");

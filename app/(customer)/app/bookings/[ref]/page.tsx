@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
 import { formatZar } from "@/lib/money";
 import { STATUS_FLOW, STATUS_LABELS } from "@/lib/booking";
-import { advanceStatusAction } from "@/app/actions/booking";
+import { advanceStatusAction, cancelBookingAction } from "@/app/actions/booking";
 import { AppShell } from "@/components/app/AppShell";
 
 export const dynamic = "force-dynamic";
@@ -53,8 +53,8 @@ export default async function TrackPage({
           </div>
         )}
 
-        {/* Unpaid bookings always have a clear way back to payment. */}
-        {booking.paymentStatus !== "PAID" && (
+        {/* Unpaid bookings (and not just-returned-from-Payfast) get a way back to pay. */}
+        {booking.paymentStatus !== "PAID" && !paid && booking.status !== "CANCELLED" && (
           <div className="mb-4 rounded-2xl border-[1.5px] border-[#f0d9b8] bg-[#fdf6ea] p-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl">⏳</span>
@@ -64,6 +64,9 @@ export default async function TrackPage({
               </div>
             </div>
             <Link href={`/app/pay/${booking.reference}`} className="btn-primary mt-3 w-full">Complete payment · {formatZar(booking.totalCents)} ›</Link>
+            <form action={cancelBookingAction.bind(null, booking.reference)} className="mt-2 text-center">
+              <button className="text-[12px] font-semibold text-[#96651a]/80 underline-offset-2 hover:underline">Cancel this booking</button>
+            </form>
           </div>
         )}
 
