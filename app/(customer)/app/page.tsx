@@ -50,10 +50,14 @@ export default async function HomePage() {
       <div className="relative z-10 -mt-10 px-[18px]">
         {/* Active booking */}
         {upcoming ? (
-          <Link href={`/app/bookings/${upcoming.reference}`} className="block card p-4 shadow-card">
+          <Link href={upcoming.paymentStatus !== "PAID" ? `/app/pay/${upcoming.reference}` : `/app/bookings/${upcoming.reference}`} className="block card p-4 shadow-card">
             <div className="mb-3 flex items-center justify-between">
-              <span className="rounded-lg bg-[#e6f6ed] px-2.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-money">● Upcoming clean</span>
-              <span className="text-[13px] font-semibold text-muted">Track ›</span>
+              {upcoming.paymentStatus !== "PAID" ? (
+                <span className="rounded-lg bg-[#fdf0dc] px-2.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-orange-accent">● Payment pending</span>
+              ) : (
+                <span className="rounded-lg bg-[#e6f6ed] px-2.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-money">● Upcoming clean</span>
+              )}
+              <span className="text-[13px] font-semibold text-magenta-brand">{upcoming.paymentStatus !== "PAID" ? "Pay now ›" : "Track ›"}</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[15px] bg-gradient-to-br from-[#efe5f6] to-[#f7eef9] text-2xl">{upcoming.service.emoji}</div>

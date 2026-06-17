@@ -53,6 +53,20 @@ export default async function TrackPage({
           </div>
         )}
 
+        {/* Unpaid bookings always have a clear way back to payment. */}
+        {booking.paymentStatus !== "PAID" && (
+          <div className="mb-4 rounded-2xl border-[1.5px] border-[#f0d9b8] bg-[#fdf6ea] p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⏳</span>
+              <div>
+                <div className="font-display font-bold text-[#96651a]">Payment pending</div>
+                <div className="text-[12.5px] text-[#96651a]/80">Complete your payment to confirm this booking and get a cleaner assigned.</div>
+              </div>
+            </div>
+            <Link href={`/app/pay/${booking.reference}`} className="btn-primary mt-3 w-full">Complete payment · {formatZar(booking.totalCents)} ›</Link>
+          </div>
+        )}
+
         {/* Helper card */}
         {booking.helper ? (
           <div className="mb-4 card p-3.5 shadow-card">

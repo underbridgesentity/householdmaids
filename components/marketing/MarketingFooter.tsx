@@ -23,8 +23,8 @@ export function MarketingFooter() {
           <div>
             <div className="mb-3 font-display text-[13px] font-bold">Contact</div>
             <div className="flex flex-col gap-2 text-[13px] text-white/65">
-              <span>062 032 4931</span>
-              <span>info@householdmaids.co.za</span>
+              <a href="tel:+27620324931" className="transition hover:text-white">062 032 4931</a>
+              <a href="mailto:info@householdmaids.co.za" className="transition hover:text-white">info@householdmaids.co.za</a>
               <span>Mon to Fri, 08:00 to 16:00</span>
             </div>
           </div>

@@ -48,9 +48,9 @@ export default async function LandingPage() {
               <Link href="/book" className="rounded-2xl bg-orange-brand px-7 py-4 font-display text-base font-extrabold text-[#2A1A40] shadow-[0_18px_32px_-14px_rgba(242,150,14,.55)]">
                 Book a service
               </Link>
-              <a href="#refer" className="rounded-2xl border-[1.5px] border-white/45 bg-white/10 px-6 py-4 font-display text-base font-bold text-white">
+              <Link href="/#refer" className="rounded-2xl border-[1.5px] border-white/45 bg-white/10 px-6 py-4 font-display text-base font-bold text-white">
                 Refer &amp; earn {reward}
-              </a>
+              </Link>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-5 text-[13.5px] font-semibold text-white/90">
               <span className="flex items-center gap-1.5"><ShieldCheck size={16} strokeWidth={2.2} /> Vetted &amp; insured</span>
@@ -262,15 +262,19 @@ export default async function LandingPage() {
         </div>
         <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {([
-            [Phone, "PHONE", "062 032 4931"],
-            [Mail, "EMAIL", "info@householdmaids.co.za"],
-            [Clock, "HOURS", "Mon to Fri, 08:00 to 16:00 · Weekends closed"],
-            [MapPin, "VISIT (KEMPTON PARK)", "70 Commissioner Rd, Office 7, Monument Corner Office Park"],
-          ] as const).map(([Icon, label, value]) => (
+            [Phone, "PHONE", "062 032 4931", "tel:+27620324931"],
+            [Mail, "EMAIL", "info@householdmaids.co.za", "mailto:info@householdmaids.co.za"],
+            [Clock, "HOURS", "Mon to Fri, 08:00 to 16:00 · Weekends closed", undefined],
+            [MapPin, "VISIT (KEMPTON PARK)", "70 Commissioner Rd, Office 7, Monument Corner Office Park", undefined],
+          ] as const).map(([Icon, label, value, href]) => (
             <div key={label} className="rounded-2xl border border-line bg-white p-5 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[13px] bg-[#fdf0dc] text-orange-accent"><Icon size={22} strokeWidth={2.2} /></div>
               <div className="mb-1 font-display text-[13px] font-bold text-orange-accent">{label}</div>
-              <div className="text-[13.5px] font-semibold text-ink">{value}</div>
+              {href ? (
+                <a href={href} className="text-[13.5px] font-semibold text-ink underline-offset-2 hover:text-magenta-brand hover:underline">{value}</a>
+              ) : (
+                <div className="text-[13.5px] font-semibold text-ink">{value}</div>
+              )}
             </div>
           ))}
         </div>

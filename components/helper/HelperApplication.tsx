@@ -181,7 +181,9 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
                 return (
                   <button
                     key={a.id}
+                    type="button"
                     onClick={() => toggleArea(a.id)}
+                    aria-pressed={sel}
                     className={`rounded-full border-[1.5px] px-4 py-2 text-[13.5px] font-bold ${sel ? "border-magenta-brand bg-surface-pink text-magenta-brand" : "border-line-input bg-white text-[#5f5878]"}`}
                   >
                     {a.name}
