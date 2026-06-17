@@ -143,7 +143,12 @@ export function BookingWizard({
         setSubmitting(false);
       }
       // success path redirects server-side
-    } catch {
+    } catch (e) {
+      // A server-action redirect/sign-in surfaces as a NEXT_REDIRECT throw on the
+      // client. That IS the success path, so re-throw to let Next navigate rather
+      // than flashing a spurious "something went wrong" before the redirect.
+      const digest = (e as { digest?: unknown })?.digest;
+      if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) throw e;
       setSubmitError("Something went wrong. Please try again.");
       setSubmitting(false);
     }
