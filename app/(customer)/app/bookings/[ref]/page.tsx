@@ -125,8 +125,8 @@ export default async function TrackPage({
           </form>
         ) : null}
 
-        {/* A paid booking can still be cancelled (refunded to wallet) until a cleaner is assigned. */}
-        {booking.paymentStatus === "PAID" && booking.status === "CONFIRMED" && (
+        {/* A paid booking can still be cancelled (refunded to wallet) until the cleaner is on the way. */}
+        {booking.paymentStatus === "PAID" && (booking.status === "CONFIRMED" || booking.status === "HELPER_ASSIGNED") && (
           <form action={cancelBookingAction.bind(null, booking.reference)} className="mt-4 text-center">
             <button className="text-[12.5px] font-semibold text-muted-soft underline-offset-2 hover:text-[#d05656] hover:underline">
               Cancel booking &amp; refund {formatZar(booking.totalCents)} to my wallet

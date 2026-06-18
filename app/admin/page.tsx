@@ -15,9 +15,12 @@ export default async function AdminDashboardPage() {
     referralCount,
     referrerGroups,
     rewardTxns,
+    walletLiabilityAgg,
   ] = await Promise.all([
     prisma.booking.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.booking.aggregate({ _sum: { totalCents: true }, where: { paymentStatus: "PAID" } }),
+    // Revenue excludes cancelled-and-refunded bookings (their value returns to the
+    // wallet and is counted when the credit is later spent on a real booking).
+    prisma.booking.aggregate({ _sum: { totalCents: true }, where: { paymentStatus: "PAID", status: { not: "CANCELLED" } } }),
     prisma.helperProfile.count({ where: { status: "APPROVED" } }),
     prisma.payoutRequest.findMany({ where: { status: "REQUESTED" }, select: { amountCents: true } }),
     prisma.booking.findMany({ where: { createdAt: { gte: weekAgo } }, select: { createdAt: true } }),
@@ -28,9 +31,12 @@ export default async function AdminDashboardPage() {
       where: { type: "REFERRAL_REWARD", status: { in: ["PAID", "EARNED"] } },
       select: { amountCents: true },
     }),
+    // Total outstanding wallet balance across everyone = money the platform owes.
+    prisma.walletTransaction.aggregate({ _sum: { amountCents: true }, where: { status: { in: ["EARNED", "PAID"] } } }),
   ]);
 
   const revenueCents = revenueAgg._sum.totalCents ?? 0;
+  const walletLiabilityCents = walletLiabilityAgg._sum.amountCents ?? 0;
   const payoutsDueCents = requestedPayouts.reduce((t, p) => t + p.amountCents, 0);
   const payoutsDueCount = requestedPayouts.length;
 
@@ -57,6 +63,7 @@ export default async function AdminDashboardPage() {
     { label: "Revenue (paid)", value: formatZar(revenueCents), delta: "↑ all time" },
     { label: "Active helpers", value: String(activeHelpers), delta: "approved & vetted" },
     { label: "Payouts due", value: formatZar(payoutsDueCents), delta: `${payoutsDueCount} request${payoutsDueCount === 1 ? "" : "s"}` },
+    { label: "Wallet liability", value: formatZar(walletLiabilityCents), delta: "owed to customers" },
   ];
 
   return (

@@ -187,9 +187,12 @@ export async function cancelBookingAction(reference: string): Promise<void> {
   if (!booking || booking.customerId !== user.id) throw new Error("Not found");
   if (booking.status === "CANCELLED") redirect("/app/bookings");
 
+  // A paid booking can be cancelled (and refunded to wallet) up until the cleaner
+  // is actually on the way. Once they're EN_ROUTE/in progress, it's support-only.
   const isPaid = booking.paymentStatus === "PAID";
-  if (isPaid && booking.status !== "CONFIRMED") {
-    throw new Error("A cleaner is already assigned. Please contact support to cancel.");
+  const refundable = booking.status === "CONFIRMED" || booking.status === "HELPER_ASSIGNED";
+  if (isPaid && !refundable) {
+    throw new Error("Your cleaner is already on the way. Please contact support to cancel.");
   }
 
   await prisma.$transaction(async (tx) => {
