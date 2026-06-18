@@ -9,6 +9,15 @@ import { audit } from "@/lib/audit";
 
 export type ProfileState = { error?: string; ok?: boolean } | undefined;
 
+/** Toggle the signed-in customer's marketing-email preference. */
+export async function setMarketingPrefAction(formData: FormData): Promise<void> {
+  const user = await assertRole("CUSTOMER", "HELPER");
+  const optOut = String(formData.get("optOut") ?? "") === "1";
+  await prisma.user.update({ where: { id: user.id }, data: { marketingOptOut: optOut } });
+  await audit({ actorId: user.id, action: "marketing.pref", entity: "User", entityId: user.id, meta: { optOut } });
+  revalidatePath("/app/profile/settings");
+}
+
 /** Update the signed-in user's own name, phone and email. */
 export async function updateProfileAction(_prev: ProfileState, formData: FormData): Promise<ProfileState> {
   const user = await assertRole("CUSTOMER", "HELPER");
