@@ -14,12 +14,15 @@ export default async function AdminDashboardPage() {
   const day14 = new Date(startOfToday.getTime() - 13 * 24 * 60 * 60 * 1000);
 
   const [
-    revenueAgg, bookingsThisWeek, activeHelpers, requestedPayouts, totalCustomers,
+    revenueAgg, paidBookingsWeek, awaitingPayment, activeHelpers, requestedPayouts, totalCustomers,
     newCustomersWeek, unassignedPaid, pendingVetting, walletLiabilityAgg,
     recent14, referralCount, rewardTxns, recentBookings,
   ] = await Promise.all([
     prisma.booking.aggregate({ _sum: { totalCents: true }, where: { paymentStatus: "PAID", status: { not: "CANCELLED" } } }),
-    prisma.booking.count({ where: { createdAt: { gte: weekAgo } } }),
+    // A "booking" for headline counts means a PAID one — unpaid rows are
+    // unfinished checkouts (or EFTs awaiting confirmation), tracked separately.
+    prisma.booking.count({ where: { paymentStatus: "PAID", status: { not: "CANCELLED" }, createdAt: { gte: weekAgo } } }),
+    prisma.booking.count({ where: { paymentStatus: "PENDING", status: { not: "CANCELLED" } } }),
     prisma.helperProfile.count({ where: { status: "APPROVED" } }),
     prisma.payoutRequest.findMany({ where: { status: "REQUESTED" }, select: { amountCents: true } }),
     prisma.user.count({ where: { role: "CUSTOMER" } }),
@@ -27,7 +30,7 @@ export default async function AdminDashboardPage() {
     prisma.booking.count({ where: { paymentStatus: "PAID", status: "CONFIRMED" } }),
     prisma.helperProfile.count({ where: { status: { in: ["PENDING", "IN_REVIEW"] } } }),
     prisma.walletTransaction.aggregate({ _sum: { amountCents: true }, where: { status: { in: ["EARNED", "PAID"] } } }),
-    prisma.booking.findMany({ where: { createdAt: { gte: day14 } }, select: { createdAt: true } }),
+    prisma.booking.findMany({ where: { paymentStatus: "PAID", status: { not: "CANCELLED" }, createdAt: { gte: day14 } }, select: { createdAt: true } }),
     prisma.referral.count(),
     prisma.walletTransaction.findMany({ where: { type: "REFERRAL_REWARD", status: { in: ["PAID", "EARNED"] } }, select: { amountCents: true } }),
     prisma.booking.findMany({ orderBy: { createdAt: "desc" }, take: 6, include: { service: true, customer: { select: { fullName: true } } } }),
@@ -56,6 +59,7 @@ export default async function AdminDashboardPage() {
 
   const alerts = [
     { label: "Paid bookings awaiting a cleaner", value: unassignedPaid, href: "/admin/bookings?status=CONFIRMED&paid=1", tone: unassignedPaid > 0 ? "warn" : "ok", icon: TriangleAlert },
+    { label: "Bookings awaiting payment", value: awaitingPayment, href: "/admin/bookings?paid=0", tone: awaitingPayment > 0 ? "warn" : "ok", icon: CalendarRange },
     { label: "Payouts to process", value: requestedPayouts.length, href: "/admin/payouts", tone: requestedPayouts.length > 0 ? "warn" : "ok", icon: Banknote },
     { label: "Helpers pending vetting", value: pendingVetting, href: "/admin/vetting", tone: pendingVetting > 0 ? "warn" : "ok", icon: BadgeCheck },
   ];
@@ -67,7 +71,7 @@ export default async function AdminDashboardPage() {
       {/* KPI tiles */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-5">
         <StatTile label="Revenue" value={formatZar(revenueCents)} sub="paid, all-time" accent="indigo" spark={sparkBookings} sparkColor="#4A2C7C" icon={<Banknote size={16} strokeWidth={2.2} />} />
-        <StatTile label="Bookings · 7d" value={String(bookingsThisWeek)} sub="new this week" accent="magenta" spark={sparkBookings} icon={<CalendarRange size={16} strokeWidth={2.2} />} />
+        <StatTile label="Paid bookings · 7d" value={String(paidBookingsWeek)} sub={`${awaitingPayment} awaiting payment`} accent="magenta" spark={sparkBookings} icon={<CalendarRange size={16} strokeWidth={2.2} />} />
         <StatTile label="Customers" value={totalCustomers.toLocaleString()} sub={`+${newCustomersWeek} this week`} accent="orange" icon={<Users size={16} strokeWidth={2.2} />} />
         <StatTile label="Wallet liability" value={formatZar(walletLiabilityCents)} sub="owed to customers" accent="money" icon={<Wallet size={16} strokeWidth={2.2} />} />
         <StatTile label="Payouts due" value={formatZar(payoutsDueCents)} sub={`${requestedPayouts.length} request${requestedPayouts.length === 1 ? "" : "s"}`} accent="magenta" icon={<Banknote size={16} strokeWidth={2.2} />} />
@@ -78,7 +82,7 @@ export default async function AdminDashboardPage() {
         <div className="rounded-[18px] border border-line bg-white p-5 shadow-[0_1px_2px_rgba(60,33,104,.04),0_10px_30px_-22px_rgba(60,33,104,.2)] lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-display text-[15px] font-bold text-ink">Bookings</div>
+              <div className="font-display text-[15px] font-bold text-ink">Paid bookings</div>
               <div className="text-[12.5px] text-muted">Last 14 days</div>
             </div>
             <div className="rounded-full bg-surface-lav px-3 py-1 text-[12px] font-bold text-indigo-brand">{recent14.length} total</div>

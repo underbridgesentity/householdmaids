@@ -118,6 +118,22 @@ model User {
   notifications  Notification[]
   auditLogs      AuditLog[]
   resetTokens    PasswordResetToken[]
+  communications CommunicationLog[]
+}
+
+/// A record of an email sent to a customer (admin one-off or transactional),
+/// so the admin has a per-customer communication trail.
+model CommunicationLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  body      String
+  kind      String   // "admin" | "booking" | "payout" | "refund" | "welcome"
+  channel   String   @default("email")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Address {
@@ -317,7 +333,9 @@ model WalletTransaction {
 model PayoutCycle {
   id         String          @id @default(cuid())
   label      String // e.g. "Fri 20 Jun"
-  runAt      DateTime?
+  runAt      DateTime? // when the batch CSV was exported
+  paidAt     DateTime? // when the admin confirmed the transfers were made
+  proofKey   String? // encrypted storage key for a batch proof-of-payment upload
   createdAt  DateTime        @default(now())
   requests   PayoutRequest[]
 }
@@ -334,6 +352,7 @@ model PayoutRequest {
   cycle       PayoutCycle? @relation(fields: [cycleId], references: [id])
   requestedAt DateTime     @default(now())
   paidAt      DateTime?
+  proofKey    String? // encrypted storage key for this payout's proof-of-payment
 }
 
 model PaymentTransaction {
@@ -342,8 +361,9 @@ model PaymentTransaction {
   booking     Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   amountCents Int
   status      PaymentStatus @default(PENDING)
-  provider    String        @default("payfast")
+  provider    String        @default("payfast") // "payfast" | "wallet" | "eft"
   providerRef String? // m_payment_id / pf_payment_id
+  proofKey    String? // encrypted storage key for an EFT proof-of-payment upload
   raw         Json?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

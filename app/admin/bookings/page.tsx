@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 type Row = {
   reference: string; customer: string; service: string; emoji: string; tint: string;
-  area: string; scheduledAt: Date; status: BookingStatus; paymentStatus: string; totalCents: number; helper: string | null;
+  area: string; scheduledAt: Date; createdAt: Date; status: BookingStatus; paymentStatus: string; totalCents: number; helper: string | null;
 };
 
 const STATUS_FILTERS: { key: string; label: string }[] = [
@@ -26,7 +26,8 @@ const STATUS_FILTERS: { key: string; label: string }[] = [
 
 export default async function AdminBookingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
-  const { page, pageSize, skip, take, q, sort, dir } = parseTableParams(sp, { defaultSort: "scheduledAt", defaultDir: "desc" });
+  // Default to newest-booked first so a just-made booking is always at the top.
+  const { page, pageSize, skip, take, q, sort, dir } = parseTableParams(sp, { defaultSort: "createdAt", defaultDir: "desc" });
   const statusFilter = sp.status && STATUS_FILTERS.some((s) => s.key === sp.status) ? (sp.status as BookingStatus) : undefined;
   const paid = sp.paid; // "1" paid, "0" unpaid
 
@@ -57,7 +58,7 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
 
   const rows: Row[] = bookings.map((b) => ({
     reference: b.reference, customer: b.customer.fullName, service: b.service.name, emoji: b.service.emoji, tint: b.service.tint,
-    area: b.area.name, scheduledAt: b.scheduledAt, status: b.status, paymentStatus: b.paymentStatus, totalCents: b.totalCents,
+    area: b.area.name, scheduledAt: b.scheduledAt, createdAt: b.createdAt, status: b.status, paymentStatus: b.paymentStatus, totalCents: b.totalCents,
     helper: b.helper?.user.fullName ?? null,
   }));
 
@@ -79,7 +80,8 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
         </div>
       ),
     },
-    { key: "when", header: "When", sortKey: "scheduledAt", render: (r) => <span className="text-[12.5px] text-muted">{r.scheduledAt.toLocaleDateString("en-ZA", { day: "numeric", month: "short" })}</span> },
+    { key: "booked", header: "Booked", sortKey: "createdAt", render: (r) => <span className="text-[12.5px] text-muted">{r.createdAt.toLocaleDateString("en-ZA", { day: "numeric", month: "short" })}</span> },
+    { key: "when", header: "Clean date", sortKey: "scheduledAt", render: (r) => <span className="text-[12.5px] text-muted">{r.scheduledAt.toLocaleDateString("en-ZA", { day: "numeric", month: "short" })}</span> },
     { key: "status", header: "Status", render: (r) => <StatusBadge status={r.status} /> },
     { key: "pay", header: "Payment", render: (r) => <PayBadge status={r.paymentStatus} /> },
     { key: "total", header: "Total", sortKey: "totalCents", align: "right", render: (r) => <span className="font-display tabular-nums font-bold text-ink">{formatZar(r.totalCents)}</span> },
@@ -89,23 +91,27 @@ export default async function AdminBookingsPage({ searchParams }: { searchParams
     <div>
       <PageHeader title="Bookings" subtitle={`${total.toLocaleString()} booking${total === 1 ? "" : "s"}`} />
 
-      {/* Filters */}
+      {/* Payment filter (primary — answers "who has actually paid?") */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-[11px] font-bold uppercase tracking-wide text-muted-label">Payment</span>
+        {[{ key: undefined, label: "All" }, { key: "1", label: "Paid" }, { key: "0", label: "Awaiting payment" }].map((f) => {
+          const on = (paid ?? "") === (f.key ?? "");
+          return (
+            <Link key={f.label} href={buildHref("/admin/bookings", sp, { paid: f.key, page: undefined })}
+              className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition ${on ? "bg-money text-white" : "border border-line-input bg-white text-muted hover:bg-[#eef6f0]"}`}>
+              {f.label}
+            </Link>
+          );
+        })}
+      </div>
+      {/* Lifecycle status filter */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-[11px] font-bold uppercase tracking-wide text-muted-label">Status</span>
         {STATUS_FILTERS.map((f) => {
           const on = (statusFilter ?? "") === f.key;
           return (
             <Link key={f.key} href={buildHref("/admin/bookings", sp, { status: f.key || undefined, page: undefined })}
               className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition ${on ? "bg-indigo-brand text-white" : "border border-line-input bg-white text-muted hover:bg-surface-lav"}`}>
-              {f.label}
-            </Link>
-          );
-        })}
-        <span className="mx-1 h-5 w-px bg-line-input" />
-        {[{ key: undefined, label: "Any pay" }, { key: "1", label: "Paid" }, { key: "0", label: "Unpaid" }].map((f) => {
-          const on = (paid ?? "") === (f.key ?? "");
-          return (
-            <Link key={f.label} href={buildHref("/admin/bookings", sp, { paid: f.key, page: undefined })}
-              className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition ${on ? "bg-magenta-brand text-white" : "border border-line-input bg-white text-muted hover:bg-surface-pink/50"}`}>
               {f.label}
             </Link>
           );

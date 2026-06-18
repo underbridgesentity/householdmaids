@@ -16,6 +16,7 @@ import { markBookingPaid, advanceBooking, assignHelper } from "@/lib/booking";
 import { appendLedger } from "@/lib/wallet";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { sendWelcomeEmail, sendRefundEmail } from "@/lib/email";
+import { logCustomerEmail } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 
 export type BookingState = { error?: string } | undefined;
@@ -212,6 +213,7 @@ export async function cancelBookingAction(reference: string): Promise<void> {
   if (isPaid && user.email) {
     try {
       await sendRefundEmail({ to: user.email, fullName: user.name ?? "there", reference: booking.reference, amountCents: booking.totalCents });
+      await logCustomerEmail(user.id, `Refunded to your wallet · ${booking.reference}`, `Booking cancelled — R${Math.round(booking.totalCents / 100)} refunded to your wallet.`, "refund");
     } catch { /* best-effort */ }
   }
   revalidatePath("/app/bookings");

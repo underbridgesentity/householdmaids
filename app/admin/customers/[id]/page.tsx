@@ -31,6 +31,7 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
       referralCode: true,
       referralsMade: { include: { referee: { select: { fullName: true, createdAt: true } } }, orderBy: { createdAt: "desc" } },
       referredBy: { include: { referrer: { select: { id: true, fullName: true } } } },
+      communications: { orderBy: { createdAt: "desc" }, take: 20 },
     },
   });
   if (!user || user.role !== "CUSTOMER") notFound();
@@ -158,6 +159,24 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
               <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-brand-gradient px-4 py-2.5 text-[13.5px] font-bold text-white"><Mail size={15} /> Send email</button>
               <p className="text-[11px] text-muted-faint">Also saved to the customer&apos;s in-app notifications.</p>
             </form>
+          </Card>
+
+          <Card title={`Communication history (${user.communications.length})`}>
+            {user.communications.length === 0 ? <Empty>No emails sent yet.</Empty> : (
+              <div className="flex flex-col">
+                {user.communications.map((c) => (
+                  <div key={c.id} className="border-b border-[#f3eff8] py-2.5 last:border-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="truncate text-[13px] font-semibold text-ink">{c.subject}</div>
+                      <span className="flex-shrink-0 rounded-full bg-surface-lav px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-brand">{c.kind}</span>
+                    </div>
+                    <div className="mt-0.5 line-clamp-2 text-[12px] text-muted">{c.body}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-faint">{c.createdAt.toLocaleString("en-ZA", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-[11px] text-muted-faint">Replies go to your support inbox, not the platform. Set a monitored Reply-To to catch them.</p>
           </Card>
         </div>
       </div>

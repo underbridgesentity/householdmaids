@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { formatZar } from "@/lib/money";
 import { STATUS_LABELS } from "@/lib/booking";
 import { StatusBadge, PayBadge } from "@/components/admin/badges";
-import { adminAssignHelperAction, adminAdvanceBookingAction, adminCancelRefundAction } from "@/app/actions/admin-bookings";
+import { adminAssignHelperAction, adminAdvanceBookingAction, adminCancelRefundAction, markBookingPaidAction } from "@/app/actions/admin-bookings";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +16,14 @@ const MSG: Record<string, { ok: boolean; text: string }> = {
   assigned: { ok: true, text: "Cleaner assigned and the customer was notified." },
   advanced: { ok: true, text: "Booking moved to its next status." },
   cancelled: { ok: true, text: "Booking cancelled. Any paid amount was refunded to the customer's wallet." },
+  markedpaid: { ok: true, text: "Booking marked as paid. The customer was confirmed and a cleaner is being assigned." },
   badhelper: { ok: false, text: "That cleaner isn't approved." },
   closed: { ok: false, text: "This booking is already completed or cancelled." },
   unpaid: { ok: false, text: "Only a paid booking can be advanced." },
   completed: { ok: false, text: "A completed booking can't be cancelled." },
   already: { ok: false, text: "This booking is already cancelled." },
+  alreadypaid: { ok: false, text: "This booking is already paid." },
+  badproof: { ok: false, text: "Proof must be an image or PDF no larger than 8MB." },
 };
 
 export default async function AdminBookingDetailPage({ params, searchParams }: { params: Promise<{ ref: string }>; searchParams: Promise<{ msg?: string }> }) {
@@ -139,6 +142,17 @@ export default async function AdminBookingDetailPage({ params, searchParams }: {
             )}
           </Card>
 
+          {!closed && booking.paymentStatus !== "PAID" && (
+            <Card title="Record an EFT payment">
+              <p className="mb-3 text-[12.5px] text-muted">Paid by bank transfer? Mark it paid here — this confirms the customer and assigns a cleaner. Attach the proof of payment if you have it.</p>
+              <form action={markBookingPaidAction} className="flex flex-col gap-2.5">
+                <input type="hidden" name="reference" value={booking.reference} />
+                <input type="file" name="proof" accept="image/*,application/pdf" className="block w-full text-[12.5px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-lav file:px-3 file:py-2 file:text-[12.5px] file:font-bold file:text-indigo-brand" />
+                <button type="submit" className="rounded-[11px] bg-money px-4 py-2.5 text-[13.5px] font-bold text-white">Mark as paid ({formatZar(booking.totalCents)})</button>
+              </form>
+            </Card>
+          )}
+
           <Card title="Lifecycle">
             <div className="flex flex-col gap-2.5">
               {!closed && booking.paymentStatus === "PAID" && booking.status !== "COMPLETED" && (
@@ -160,8 +174,14 @@ export default async function AdminBookingDetailPage({ params, searchParams }: {
           <Card title="Payment">
             <div className="flex flex-col gap-2 text-[13px]">
               <Line label="Status" value={booking.paymentStatus} />
-              <Line label="Provider" value={booking.payment?.provider ?? "—"} />
+              <Line label="Method" value={booking.payment?.provider === "eft" ? "EFT (manual)" : booking.payment?.provider === "wallet" ? "Wallet" : booking.payment?.provider ?? "—"} />
               {booking.payment?.providerRef && <Line label="Reference" value={booking.payment.providerRef} mono />}
+              {booking.payment?.proofKey && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted">Proof of payment</span>
+                  <a href={`/api/booking-proof/${booking.reference}`} target="_blank" rel="noreferrer" className="font-semibold text-magenta-brand">View →</a>
+                </div>
+              )}
               {booking.review && <Line label="Rating" value={`⭐ ${booking.review.stars}/5`} />}
             </div>
           </Card>

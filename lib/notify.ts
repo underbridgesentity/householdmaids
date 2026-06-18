@@ -25,3 +25,16 @@ export async function notifyUser(userId: string, title: string, body: string): P
 export async function sendEmail(to: string, title: string, body: string): Promise<void> {
   await consoleSink.send(to, title, body);
 }
+
+/**
+ * Records an email sent to a customer so the admin has a per-customer
+ * communication trail. Best-effort: a logging failure must never break the
+ * underlying action (the email itself already went out).
+ */
+export async function logCustomerEmail(userId: string, subject: string, body: string, kind: string): Promise<void> {
+  try {
+    await prisma.communicationLog.create({ data: { userId, subject, body, kind } });
+  } catch {
+    /* non-critical */
+  }
+}

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { assertRole } from "@/lib/rbac";
 import { sendEmail } from "@/lib/email";
-import { notifyUser } from "@/lib/notify";
+import { notifyUser, logCustomerEmail } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 
 const schema = z.object({
@@ -32,8 +32,10 @@ export async function emailCustomerAction(formData: FormData): Promise<void> {
   } catch {
     redirect(`/admin/customers/${customerId}?msg=emailfailed`);
   }
-  // Mirror it in-app so the customer sees it even if email is missed.
+  // Mirror it in-app so the customer sees it even if email is missed, and log
+  // it to the communication trail.
   await notifyUser(customerId, subject, body);
+  await logCustomerEmail(customerId, subject, body, "admin");
   await audit({ actorId: admin.id, action: "customer.emailed", entity: "User", entityId: customerId, meta: { subject } });
   redirect(`/admin/customers/${customerId}?msg=sent`);
 }

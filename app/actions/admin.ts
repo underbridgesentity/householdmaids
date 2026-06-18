@@ -5,11 +5,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { assertRole } from "@/lib/rbac";
 import { serviceUpsertSchema, settingsSchema } from "@/lib/validation";
-import { randsToCents } from "@/lib/money";
-import { decrypt } from "@/lib/crypto";
-import { getPayoutAdapter, type PayoutInstruction } from "@/lib/payout";
+import { randsToCents, formatZar } from "@/lib/money";
+import { storeEncryptedFile, validUpload } from "@/lib/storage";
 import { createHelperAccount } from "@/lib/helper-admin";
 import { sendPayoutPaidEmail } from "@/lib/email";
+import { logCustomerEmail } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 
 // ---- Manually load helpers (admin) ----------------------------------------
@@ -217,63 +217,64 @@ export async function rejectHelperAction(profileId: string): Promise<void> {
   redirect("/admin/vetting");
 }
 
-export async function runFridayPayoutAction(): Promise<void> {
+/**
+ * Step 1 of the weekly payout: CLAIM every REQUESTED payout into a new batch
+ * (PayoutCycle) and move them to PROCESSING. This does NOT mark anything paid —
+ * the admin downloads the batch CSV, makes the transfers in their own bank, then
+ * confirms with confirmPayoutBatchAction. Scoping the claim to REQUESTED makes a
+ * concurrent/double export safe (the second claim grabs 0 rows).
+ */
+export async function exportPayoutBatchAction(): Promise<void> {
   const admin = await assertRole("ADMIN");
-
-  // 1. Atomically CLAIM all REQUESTED payouts into a new cycle. Scoping the
-  //    update to status REQUESTED means a concurrent/double run can't grab the
-  //    same rows (the second claim returns count 0).
   const label = new Date().toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" });
   const { cycleId, claimed } = await prisma.$transaction(async (tx) => {
     const cycle = await tx.payoutCycle.create({ data: { label, runAt: new Date() } });
-    const res = await tx.payoutRequest.updateMany({
-      where: { status: "REQUESTED" },
-      data: { status: "PROCESSING", cycleId: cycle.id },
-    });
+    const res = await tx.payoutRequest.updateMany({ where: { status: "REQUESTED" }, data: { status: "PROCESSING", cycleId: cycle.id } });
     return { cycleId: cycle.id, claimed: res.count };
   });
-
   if (claimed === 0) {
-    redirect("/admin/payouts?ran=0"); // nothing to pay out
+    await prisma.payoutCycle.delete({ where: { id: cycleId } }); // don't litter history with empty batches
+    redirect("/admin/payouts?msg=empty");
+  }
+  await audit({ actorId: admin.id, action: "payout.batchExported", entity: "PayoutCycle", entityId: cycleId, meta: { count: claimed } });
+  redirect(`/admin/payouts?exported=${cycleId}`);
+}
+
+/**
+ * Step 2: the admin confirms they've actually made the transfers for a batch.
+ * Marks every PROCESSING row in the cycle PAID, stamps the cycle paid, attaches
+ * an optional proof-of-payment (visible to each affiliate), and emails everyone.
+ */
+export async function confirmPayoutBatchAction(formData: FormData): Promise<void> {
+  const admin = await assertRole("ADMIN");
+  const cycleId = String(formData.get("cycleId") ?? "");
+  if (!cycleId) redirect("/admin/payouts");
+
+  const proof = validUpload(formData.get("proof"));
+  if (proof === "invalid") redirect("/admin/payouts?msg=badproof");
+  let proofKey: string | undefined;
+  if (proof) {
+    const bytes = Buffer.from(await proof.arrayBuffer());
+    proofKey = (await storeEncryptedFile(`payout-proof/${cycleId}`, proof.name, bytes)).storageKey;
   }
 
-  // 2. Build bank instructions from the rows WE claimed (decrypt full acct #).
-  const requests = await prisma.payoutRequest.findMany({
-    where: { cycleId, status: "PROCESSING" },
-    include: { user: true },
-  });
-  const instructions: PayoutInstruction[] = requests.map((req) => {
-    let bank = "", accountNumber = "", accountType = "";
-    if (req.user.bankAccountEnc) {
-      try {
-        const acct = JSON.parse(decrypt(req.user.bankAccountEnc)) as { bank: string; accountNumber: string; type?: string; accountType?: string };
-        bank = acct.bank; accountNumber = acct.accountNumber; accountType = acct.type ?? acct.accountType ?? "";
-      } catch { /* empty details */ }
-    }
-    return { reference: req.reference, beneficiaryName: req.user.fullName, bank, accountNumber, accountType, amountCents: req.amountCents };
+  const requests = await prisma.payoutRequest.findMany({ where: { cycleId, status: "PROCESSING" }, include: { user: { select: { email: true, fullName: true } } } });
+  if (requests.length === 0) redirect("/admin/payouts?msg=nothing");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payoutRequest.updateMany({ where: { cycleId, status: "PROCESSING" }, data: { status: "PAID", paidAt: new Date() } });
+    await tx.payoutCycle.update({ where: { id: cycleId }, data: { paidAt: new Date(), ...(proofKey ? { proofKey } : {}) } });
   });
 
-  // 3. Run the external money movement OUTSIDE any DB transaction, so a DB
-  //    failure can't roll back work the bank already accepted.
-  const { batchRef } = await getPayoutAdapter().process(instructions);
-  const total = instructions.reduce((t, i) => t + i.amountCents, 0);
-
-  // 4. Mark the claimed rows PAID (the batch CSV is regenerated on demand from
-  //    this cycle's rows by the download route, so nothing extra to persist).
-  await prisma.payoutRequest.updateMany({
-    where: { cycleId, status: "PROCESSING" },
-    data: { status: "PAID", paidAt: new Date() },
-  });
-
-  // Tell each beneficiary their payout was sent (best-effort).
   for (const req of requests) {
     try {
       await sendPayoutPaidEmail({ to: req.user.email, fullName: req.user.fullName, reference: req.reference, amountCents: req.amountCents });
+      await logCustomerEmail(req.userId, `Payout sent · ${formatZar(req.amountCents)}`, `Your payout of ${formatZar(req.amountCents)} (${req.reference}) was processed.`, "payout");
     } catch { /* best-effort */ }
   }
-
-  await audit({ actorId: admin.id, action: "payout.fridayRun", entity: "PayoutCycle", entityId: cycleId, meta: { batchRef, totalCents: total, count: instructions.length } });
-  redirect(`/admin/payouts?ran=1&cycle=${cycleId}`);
+  const total = requests.reduce((t, r) => t + r.amountCents, 0);
+  await audit({ actorId: admin.id, action: "payout.batchConfirmed", entity: "PayoutCycle", entityId: cycleId, meta: { totalCents: total, count: requests.length, hasProof: !!proofKey } });
+  redirect("/admin/payouts?msg=confirmed");
 }
 
 export async function approvePayoutAction(id: string): Promise<void> {
@@ -286,6 +287,7 @@ export async function approvePayoutAction(id: string): Promise<void> {
     if (req) {
       try {
         await sendPayoutPaidEmail({ to: req.user.email, fullName: req.user.fullName, reference: req.reference, amountCents: req.amountCents });
+        await logCustomerEmail(req.userId, `Payout sent · ${formatZar(req.amountCents)}`, `Your payout of ${formatZar(req.amountCents)} (${req.reference}) was processed.`, "payout");
       } catch { /* best-effort */ }
     }
   }

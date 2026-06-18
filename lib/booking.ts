@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { appendLedger } from "@/lib/wallet";
 import { getSettings } from "@/lib/settings";
-import { notifyUser } from "@/lib/notify";
+import { notifyUser, logCustomerEmail } from "@/lib/notify";
 import { sendBookingConfirmationEmail, sendHelperAssignedEmail, sendBookingCompletedEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
 import { bookingReference } from "@/lib/reference";
@@ -55,6 +55,7 @@ export async function advanceBooking(reference: string): Promise<void> {
     if (customer && helper) {
       try {
         await sendHelperAssignedEmail({ to: customer.email, fullName: customer.fullName, reference, helperName: helper.user.fullName });
+        await logCustomerEmail(booking.customerId, `Your cleaner is assigned · ${reference}`, `${helper.user.fullName} has been assigned to your booking.`, "booking");
       } catch { /* best-effort */ }
     }
   }
@@ -69,6 +70,7 @@ export async function advanceBooking(reference: string): Promise<void> {
     if (customer) {
       try {
         await sendBookingCompletedEmail({ to: customer.email, fullName: customer.fullName, reference });
+        await logCustomerEmail(booking.customerId, `How did we do? · ${reference}`, "Your clean is complete — please rate your cleaner.", "booking");
       } catch { /* best-effort */ }
     }
   }
@@ -190,6 +192,7 @@ export async function markBookingPaid(reference: string, providerRef?: string): 
         to: booking.customer.email, fullName: booking.customer.fullName, reference: booking.reference,
         serviceName: booking.service.name, scheduledAt: booking.scheduledAt, totalCents: booking.totalCents,
       });
+      await logCustomerEmail(booking.customerId, `Booking confirmed · ${booking.reference}`, "Your booking is confirmed and paid.", "booking");
     } catch { /* email is best-effort */ }
     if (booking.referral?.status === "EARNED") {
       await notifyUser(
@@ -230,5 +233,6 @@ export async function assignHelper(reference: string): Promise<void> {
   await notifyUser(booking.customerId, "Cleaner assigned", "A vetted cleaner has been assigned to your booking.");
   try {
     await sendHelperAssignedEmail({ to: booking.customer.email, fullName: booking.customer.fullName, reference: booking.reference, helperName: helper.user.fullName });
+    await logCustomerEmail(booking.customerId, `Your cleaner is assigned · ${booking.reference}`, `${helper.user.fullName} has been assigned to your booking.`, "booking");
   } catch { /* email is best-effort */ }
 }

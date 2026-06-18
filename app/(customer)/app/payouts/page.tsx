@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function PayoutsPage({ searchParams }: { searchParams: Promise<{ requested?: string }> }) {
   const user = await requireRole("CUSTOMER");
   const { requested } = await searchParams;
-  const payouts = await prisma.payoutRequest.findMany({ where: { userId: user.id }, orderBy: { requestedAt: "desc" } });
+  const payouts = await prisma.payoutRequest.findMany({ where: { userId: user.id }, orderBy: { requestedAt: "desc" }, include: { cycle: { select: { proofKey: true } } } });
   const pending = payouts.filter((p) => p.status === "REQUESTED" || p.status === "PROCESSING");
   const completed = payouts.filter((p) => p.status === "PAID");
 
@@ -23,7 +23,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
       <div className="px-[18px] pb-6">
         {requested && (
           <div className="mb-4 rounded-2xl border border-[#cfe8d8] bg-[#eef6f0] px-4 py-3 text-[13px] font-semibold text-money-dark">
-            ✓ Payout requested, it&apos;ll be paid out this Friday.
+            ✓ Payout requested. We&apos;ll process it and notify you once it&apos;s paid.
           </div>
         )}
 
@@ -54,6 +54,9 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
               <div className="flex-1">
                 <div className="font-display text-[15px] font-bold">{formatZar(p.amountCents)}</div>
                 <div className="text-xs text-muted">{p.paidAt ? new Date(p.paidAt).toLocaleDateString("en-ZA", { weekday: "short", day: "numeric", month: "short" }) : ""} · {p.reference}</div>
+                {(p.proofKey || p.cycle?.proofKey) && (
+                  <a href={`/api/payout-proof/${p.id}`} target="_blank" rel="noreferrer" className="mt-0.5 inline-block text-[11.5px] font-bold text-magenta-brand">View proof of payment →</a>
+                )}
               </div>
               <span className="rounded-md bg-[#e6f6ed] px-2.5 py-1 text-[11px] font-bold text-money">Paid</span>
             </div>
