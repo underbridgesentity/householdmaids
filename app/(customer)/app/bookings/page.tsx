@@ -11,8 +11,9 @@ export const metadata = { title: "My bookings" };
 
 export default async function BookingsPage() {
   const user = await requireRole("CUSTOMER");
+  // Cancelled bookings are abandoned attempts; they drop off the customer's list.
   const bookings = await prisma.booking.findMany({
-    where: { customerId: user.id },
+    where: { customerId: user.id, status: { not: "CANCELLED" } },
     orderBy: { scheduledAt: "desc" },
     include: { service: true },
   });

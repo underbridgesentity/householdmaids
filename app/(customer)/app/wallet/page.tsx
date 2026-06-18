@@ -34,7 +34,7 @@ export default async function WalletPage() {
       <div className="relative overflow-hidden rounded-b-[28px] bg-wallet-gradient px-5 pb-16 pt-4">
         <div className="absolute -right-10 -top-8 text-[150px] opacity-10">💸</div>
         <div className="relative z-10">
-          <div className="mb-1 text-[12px] font-bold uppercase tracking-[.08em] text-white/70">Referral wallet</div>
+          <div className="mb-1 text-[12px] font-bold uppercase tracking-[.08em] text-white/70">Your wallet</div>
           <div className="text-[13px] text-white/80">Available to withdraw</div>
           <div className="my-1 font-display text-[40px] font-extrabold tracking-tight text-white">{formatZar(wallet.availableCents)}</div>
           <div className="text-[12.5px] text-white/80">+ {formatZar(wallet.pendingCents)} pending · {formatZar(wallet.allTimeEarnedCents)} earned all-time</div>
