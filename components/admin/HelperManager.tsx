@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import {
   addHelperAction, importHelpersAction,
   type AddHelperState, type ImportHelpersState,
@@ -43,7 +44,7 @@ function SingleForm({ areas }: { areas: Area[] }) {
           <div><span className="text-muted">Email:</span> {state.created.email}</div>
           <div><span className="text-muted">Temp password:</span> <strong>{state.created.tempPassword}</strong></div>
         </div>
-        <a href="/admin/helpers" className="mt-4 inline-block text-[13px] font-bold text-magenta-brand">Add another →</a>
+        <Link href="/admin/helpers/new" className="mt-4 inline-block text-[13px] font-bold text-magenta-brand">Add another →</Link>
       </div>
     );
   }
