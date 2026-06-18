@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, CalendarRange, Users, UserCog, BadgeCheck, Banknote,
-  Ticket, Inbox, BarChart3, Tag, Menu, X, LogOut,
+  Ticket, Inbox, BarChart3, Tag, Menu, X, LogOut, Mail,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { logoutAction } from "@/app/actions/auth";
@@ -33,6 +33,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     title: "Growth",
     items: [
       { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+      { href: "/admin/marketing", label: "Newsletter", icon: Mail },
       { href: "/admin/enquiries", label: "Enquiries", icon: Inbox },
     ],
   },

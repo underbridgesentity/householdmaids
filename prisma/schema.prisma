@@ -102,6 +102,7 @@ model User {
   passwordHash  String
   emailVerified DateTime?
   bankAccountEnc String? // encrypted JSON {bank, accountNumber, type} for referral payouts
+  marketingOptOut Boolean @default(false) // unsubscribed from newsletters/marketing
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -409,6 +410,23 @@ model Enquiry {
   adminNote   String? // internal note / the quote amount once prepared
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+}
+
+/// A newsletter / marketing email blast to a customer segment. Recorded for the
+/// admin's campaign history; recipients are resolved from the segment at send
+/// time (excluding anyone who has opted out).
+model Campaign {
+  id             String    @id @default(cuid())
+  subject        String
+  body           String
+  segment        String // segment key (see lib/marketing.ts)
+  status         String    @default("SENT") // SENDING | SENT | PARTIAL | FAILED
+  recipientCount Int       @default(0)
+  sentCount      Int       @default(0)
+  failedCount    Int       @default(0)
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  sentAt         DateTime?
 }
 
 model PasswordResetToken {

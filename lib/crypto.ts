@@ -52,6 +52,33 @@ export function decryptBytes(payload: Buffer): Buffer {
   return Buffer.concat([decipher.update(data), decipher.final()]);
 }
 
+/**
+ * Stateless signed tokens (HMAC-SHA256 over the app key). Used for unsubscribe
+ * links so a customer can opt out from an email without logging in, and without
+ * us storing a token per recipient. Tamper-proof: the payload is signed, so a
+ * forged userId won't verify.
+ */
+export function signToken(payload: string): string {
+  const sig = crypto.createHmac("sha256", getKey()).update(payload).digest("base64url");
+  return `${Buffer.from(payload, "utf8").toString("base64url")}.${sig}`;
+}
+
+export function verifyToken(token: string): string | null {
+  const [b64, sig] = token.split(".");
+  if (!b64 || !sig) return null;
+  let payload: string;
+  try {
+    payload = Buffer.from(b64, "base64url").toString("utf8");
+  } catch {
+    return null;
+  }
+  const expected = crypto.createHmac("sha256", getKey()).update(payload).digest("base64url");
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  return payload;
+}
+
 /** Masks an account/ID number for display, e.g. "•••• 7781". */
 export function maskTail(value: string, tail = 4): string {
   const digits = value.replace(/\s+/g, "");
