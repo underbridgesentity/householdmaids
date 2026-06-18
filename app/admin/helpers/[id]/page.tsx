@@ -26,7 +26,10 @@ export default async function HelperProfilePage({ params }: { params: Promise<{ 
   });
   if (!h) notFound();
 
-  const earned = h.bookings.filter((b) => b.status === "COMPLETED" && b.paymentStatus !== "REFUNDED").reduce((t, b) => t + b.totalCents, 0);
+  // Gross booking value this cleaner has handled (paid, not cancelled) — across
+  // ALL their jobs, not just the 10 shown below.
+  const grossAgg = await prisma.booking.aggregate({ _sum: { totalCents: true }, where: { helperId: h.id, paymentStatus: "PAID", status: { not: "CANCELLED" } } });
+  const grossCents = grossAgg._sum.totalCents ?? 0;
   const decidable = h.status === "PENDING" || h.status === "IN_REVIEW";
   const statusLabel = h.status === "IN_REVIEW" ? "In review" : h.status[0] + h.status.slice(1).toLowerCase();
 
@@ -43,7 +46,7 @@ export default async function HelperProfilePage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <Kpi icon={<Star size={16} strokeWidth={2.2} />} label="Rating" value={h.rating > 0 ? h.rating.toFixed(1) : "—"} c="#F2960E" />
         <Kpi icon={<CheckCircle2 size={16} strokeWidth={2.2} />} label="Completed jobs" value={String(h.completedJobs)} c="#1F9D63" />
-        <Kpi icon={<Briefcase size={16} strokeWidth={2.2} />} label="Earned (completed)" value={formatZar(earned)} c="#4A2C7C" />
+        <Kpi icon={<Briefcase size={16} strokeWidth={2.2} />} label="Revenue handled" value={formatZar(grossCents)} c="#4A2C7C" />
         <Kpi icon={<MapPin size={16} strokeWidth={2.2} />} label="Areas" value={String(h.areas.length)} c="#A22D8F" />
       </div>
 

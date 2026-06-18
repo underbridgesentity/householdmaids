@@ -33,9 +33,9 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
   // Revenue is paid bookings only (exclude the refunded ones from the money totals).
   const paid = paidInWindow.filter((b) => b.paymentStatus === "PAID");
   const revenueCents = paid.reduce((t, b) => t + b.totalCents, 0);
-  const walletPaid = paid.filter((b) => b.payment?.providerRef?.startsWith("WALLET-"));
-  const walletRevenueCents = walletPaid.reduce((t, b) => t + b.totalCents, 0);
-  const cardRevenueCents = revenueCents - walletRevenueCents;
+  const walletRevenueCents = paid.filter((b) => b.payment?.providerRef?.startsWith("WALLET-")).reduce((t, b) => t + b.totalCents, 0);
+  const eftRevenueCents = paid.filter((b) => b.payment?.providerRef?.startsWith("EFT-")).reduce((t, b) => t + b.totalCents, 0);
+  const cardRevenueCents = revenueCents - walletRevenueCents - eftRevenueCents;
   const avgCents = paid.length ? Math.round(revenueCents / paid.length) : 0;
 
   // Revenue series, bucketed.
@@ -108,6 +108,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
           <div className="font-display text-[15px] font-bold text-ink">How customers paid</div>
           <div className="mt-4 flex flex-col gap-3">
             <SplitBar label="Card (Payfast)" icon={<CreditCard size={15} />} cents={cardRevenueCents} total={revenueCents} color="#4A2C7C" />
+            {eftRevenueCents > 0 && <SplitBar label="EFT (manual)" icon={<Banknote size={15} />} cents={eftRevenueCents} total={revenueCents} color="#F2960E" />}
             <SplitBar label="Wallet credit" icon={<Wallet size={15} />} cents={walletRevenueCents} total={revenueCents} color="#1F9D63" />
           </div>
           <p className="mt-4 text-[12px] text-muted-faint">Wallet payments draw down referral & refund credit — they are revenue recognised but not fresh cash in.</p>

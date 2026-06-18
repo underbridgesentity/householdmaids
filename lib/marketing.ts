@@ -80,7 +80,13 @@ export interface Recipient { id: string; email: string; fullName: string }
 export async function deliverCampaign(subject: string, body: string, recipients: Recipient[]): Promise<{ sent: number; failed: number }> {
   const messages = recipients.map((r) => {
     const unsub = unsubscribeUrl(r.id);
-    return { from: FROM, to: r.email, subject, html: renderHtml(r.fullName, body, unsub), text: renderText(r.fullName, body, unsub) };
+    return {
+      from: FROM, to: r.email, subject,
+      html: renderHtml(r.fullName, body, unsub),
+      text: renderText(r.fullName, body, unsub),
+      // Native "Unsubscribe" affordance in Gmail/Outlook → better deliverability.
+      headers: { "List-Unsubscribe": `<${unsub}>` },
+    };
   });
 
   const key = process.env.RESEND_API_KEY;
