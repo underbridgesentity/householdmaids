@@ -12,7 +12,8 @@ import { bookingSchema, reviewSchema, messageSchema } from "@/lib/validation";
 import { computePrice } from "@/lib/pricing";
 import { getSettings } from "@/lib/settings";
 import { bookingReference, referralCodeFor } from "@/lib/reference";
-import { markBookingPaid, advanceBooking } from "@/lib/booking";
+import { markBookingPaid, advanceBooking, assignHelper } from "@/lib/booking";
+import { appendLedger } from "@/lib/wallet";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { sendWelcomeEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
@@ -175,21 +176,107 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
 }
 
 /**
- * Customer cancels their own UNPAID booking (e.g. an abandoned attempt). Paid
- * bookings can't be self-cancelled here (those go through support/refund).
+ * Customer cancels their own booking. Always allowed while UNPAID (abandoned
+ * attempt). A PAID booking can be cancelled only while still unassigned
+ * (CONFIRMED) — its amount is then refunded to the customer's wallet. Once a
+ * cleaner is assigned or en route, cancellation goes through support.
  */
 export async function cancelBookingAction(reference: string): Promise<void> {
   const user = await assertRole("CUSTOMER");
   const booking = await prisma.booking.findUnique({ where: { reference } });
   if (!booking || booking.customerId !== user.id) throw new Error("Not found");
-  if (booking.paymentStatus === "PAID") throw new Error("Paid bookings can't be cancelled here");
-  if (booking.status !== "CANCELLED") {
-    await prisma.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
-    await audit({ actorId: user.id, action: "booking.cancelled", entity: "Booking", entityId: reference });
+  if (booking.status === "CANCELLED") redirect("/app/bookings");
+
+  const isPaid = booking.paymentStatus === "PAID";
+  if (isPaid && booking.status !== "CONFIRMED") {
+    throw new Error("A cleaner is already assigned. Please contact support to cancel.");
   }
-  revalidatePath("/app/profile/bookings");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
+    // Refund a paid booking's full amount to the wallet (store credit, not cash).
+    if (isPaid) {
+      await appendLedger(tx, {
+        userId: user.id,
+        type: "ADJUSTMENT",
+        amountCents: booking.totalCents,
+        status: "EARNED",
+        ref: `Refund · cancelled booking ${booking.reference}`,
+      });
+    }
+  });
+  await audit({ actorId: user.id, action: "booking.cancelled", entity: "Booking", entityId: reference, meta: { refundedCents: isPaid ? booking.totalCents : 0 } });
+  revalidatePath("/app/bookings");
+  revalidatePath("/app/wallet");
   revalidatePath(`/app/bookings/${reference}`);
-  redirect("/app/profile/bookings");
+  redirect(isPaid ? "/app/wallet" : "/app/bookings");
+}
+
+/**
+ * Pays for a booking entirely from the customer's wallet balance (referral
+ * earnings + cancellation credits). Only offered when the balance covers the
+ * full total. Overdraw-protected with a user-row lock under SERIALIZABLE, and
+ * idempotent (a second call on an already-paid booking is a no-op). Earns the
+ * referral reward like a card payment, then assigns a cleaner. On failure it
+ * redirects back to the pay page with an error message.
+ */
+export async function payWithWalletAction(reference: string): Promise<void> {
+  const user = await assertRole("CUSTOMER");
+  const settings = await getSettings();
+
+  let errorMsg: string | undefined;
+  let attempt = 0;
+  for (;;) {
+    try {
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // Lock the wallet owner (overdraw) and the booking (idempotency).
+          await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
+          await tx.$queryRaw`SELECT id FROM "Booking" WHERE reference = ${reference} FOR UPDATE`;
+          const b = await tx.booking.findUnique({ where: { reference }, include: { payment: true, referral: true } });
+          if (!b || b.customerId !== user.id) return { error: "Booking not found." };
+          if (b.paymentStatus === "PAID") return { ok: true as const }; // already paid
+          if (b.status === "CANCELLED") return { error: "This booking was cancelled." };
+
+          const txns = await tx.walletTransaction.findMany({ where: { userId: user.id } });
+          const available = txns.reduce((s, t) => (t.status === "EARNED" || t.status === "PAID" ? s + t.amountCents : s), 0);
+          if (available < b.totalCents) {
+            return { error: `Your wallet balance (R${Math.round(available / 100)}) doesn't cover this R${Math.round(b.totalCents / 100)} booking.` };
+          }
+
+          await appendLedger(tx, { userId: user.id, type: "ADJUSTMENT", amountCents: -b.totalCents, status: "PAID", ref: `Booking payment · ${b.reference}` });
+          await tx.booking.update({ where: { id: b.id }, data: { paymentStatus: "PAID" } });
+          await tx.paymentTransaction.update({ where: { bookingId: b.id }, data: { status: "PAID", providerRef: `WALLET-${b.reference}` } });
+
+          // First paid booking earns the referrer their reward (same as a card pay).
+          if (b.referral && b.referral.status === "PENDING" && b.isFirstBooking) {
+            await tx.referral.update({ where: { id: b.referral.id }, data: { status: "EARNED", rewardCents: settings.referrerRewardCents, bookingId: b.id, earnedAt: new Date() } });
+            await appendLedger(tx, { userId: b.referral.referrerId, type: "REFERRAL_REWARD", amountCents: settings.referrerRewardCents, status: "EARNED", ref: `Referral · booking ${b.reference}` });
+          }
+          return { ok: true as const };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+      if ("error" in result && result.error) errorMsg = result.error;
+      break;
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2034" && attempt < 3) {
+        attempt += 1;
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  if (errorMsg) redirect(`/app/pay/${reference}?wallet_error=${encodeURIComponent(errorMsg)}`);
+
+  try {
+    await assignHelper(reference);
+  } catch {
+    /* helper assigned later */
+  }
+  await audit({ actorId: user.id, action: "booking.paid", entity: "Booking", entityId: reference, meta: { method: "wallet" } });
+  redirect(`/app/bookings/${reference}?paid=1`);
 }
 
 /** Dev-only: simulate a successful Payfast payment (no public ITN reachable on localhost). */

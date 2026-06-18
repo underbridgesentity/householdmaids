@@ -5,17 +5,22 @@ import { requireRole } from "@/lib/rbac";
 import { formatZar } from "@/lib/money";
 import { Logo } from "@/components/ui/Logo";
 import { payfastConfig, payfastProcessUrl, buildCheckoutFields } from "@/lib/payfast";
-import { simulatePaymentAction, cancelBookingAction } from "@/app/actions/booking";
+import { getWallet } from "@/lib/wallet";
+import { simulatePaymentAction, cancelBookingAction, payWithWalletAction } from "@/app/actions/booking";
 
 export const dynamic = "force-dynamic";
 
-export default async function PayPage({ params, searchParams }: { params: Promise<{ ref: string }>; searchParams: Promise<{ cancelled?: string }> }) {
+export default async function PayPage({ params, searchParams }: { params: Promise<{ ref: string }>; searchParams: Promise<{ cancelled?: string; wallet_error?: string }> }) {
   const user = await requireRole("CUSTOMER");
   const { ref } = await params;
-  const { cancelled } = await searchParams;
+  const { cancelled, wallet_error: walletError } = await searchParams;
 
   const booking = await prisma.booking.findUnique({ where: { reference: ref }, include: { service: true, area: true } });
   if (!booking || booking.customerId !== user.id) notFound();
+
+  // Offer "pay with wallet" only when the balance fully covers this booking.
+  const wallet = await getWallet(user.id);
+  const canPayWithWallet = wallet.availableCents >= booking.totalCents && booking.paymentStatus !== "PAID";
 
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
   const cfg = payfastConfig();
@@ -81,6 +86,11 @@ export default async function PayPage({ params, searchParams }: { params: Promis
               That payment didn&apos;t go through (it was cancelled or declined by Payfast). You can try again below.
             </div>
           )}
+          {walletError && (
+            <div className="mb-4 rounded-[13px] border border-[#f0d6d6] bg-[#fdf3f3] px-4 py-3 text-[13px] font-semibold text-[#d05656]">
+              {walletError}
+            </div>
+          )}
 
           {/* Booking review */}
           <div className="card p-4">
@@ -102,11 +112,19 @@ export default async function PayPage({ params, searchParams }: { params: Promis
             <span className="text-[12.5px] leading-snug text-money-dark">You&apos;ll be taken to Payfast to complete payment securely. A referral reward is earned once your payment clears.</span>
           </div>
 
-          <form action={processUrl} method="post" className="mt-5">
+          {canPayWithWallet && (
+            <form action={payWithWalletAction.bind(null, booking.reference)} className="mt-5">
+              <button type="submit" className="w-full rounded-[15px] border-[1.5px] border-magenta-brand bg-surface-pink py-3.5 font-display text-[15px] font-bold text-magenta-brand">
+                Pay {formatZar(booking.totalCents)} from wallet · balance {formatZar(wallet.availableCents)}
+              </button>
+            </form>
+          )}
+
+          <form action={processUrl} method="post" className={canPayWithWallet ? "mt-3" : "mt-5"}>
             {Object.entries(fields).map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <button type="submit" className="btn-primary w-full">Pay {formatZar(booking.totalCents)} with Payfast ›</button>
+            <button type="submit" className="btn-primary w-full">{canPayWithWallet ? "Or pay" : "Pay"} {formatZar(booking.totalCents)} with Payfast ›</button>
           </form>
 
           {isDev && (

@@ -11,15 +11,14 @@ export const dynamic = "force-dynamic";
 
 export default async function WalletPage() {
   const user = await requireRole("CUSTOMER");
-  const [wallet, settings, code, referrals] = await Promise.all([
+  const [wallet, settings, code, activity] = await Promise.all([
     getWallet(user.id),
     getSettings(),
     prisma.referralCode.findUnique({ where: { ownerId: user.id } }),
-    prisma.referral.findMany({
-      where: { referrerId: user.id },
+    prisma.walletTransaction.findMany({
+      where: { userId: user.id, status: { not: "REVERSED" } },
       orderBy: { createdAt: "desc" },
-      take: 6,
-      include: { referee: true },
+      take: 10,
     }),
   ]);
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -93,23 +92,27 @@ export default async function WalletPage() {
           ))}
         </div>
 
-        {/* Recent earnings */}
-        <h3 className="mb-3 mt-5 px-0.5 font-display text-base font-bold">Recent earnings</h3>
+        {/* Recent activity (referral earnings, booking refunds, payments, payouts) */}
+        <h3 className="mb-3 mt-5 px-0.5 font-display text-base font-bold">Recent activity</h3>
         <div className="flex flex-col gap-2.5 pb-6">
-          {referrals.length === 0 && <div className="card p-4 text-center text-[13px] text-muted">No referrals yet, share your link to start earning.</div>}
-          {referrals.map((r) => (
-            <div key={r.id} className="flex items-center gap-3 rounded-[15px] border border-line bg-white px-3.5 py-3">
-              <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] bg-surface-lav text-[17px]">🤝</div>
-              <div className="flex-1">
-                <div className="text-[13.5px] font-semibold leading-tight">{r.referee.fullName} joined with your code</div>
-                <div className="text-[11.5px] text-muted-faint">{new Date(r.createdAt).toLocaleDateString("en-ZA", { day: "numeric", month: "short" })}</div>
+          {activity.length === 0 && <div className="card p-4 text-center text-[13px] text-muted">No activity yet. Share your referral link to start earning.</div>}
+          {activity.map((t) => {
+            const credit = t.amountCents >= 0;
+            const icon = t.type === "REFERRAL_REWARD" ? "🤝" : t.type === "WITHDRAWAL" ? "🏦" : credit ? "↩️" : "🧹";
+            const label =
+              t.ref ??
+              (t.type === "REFERRAL_REWARD" ? "Referral reward" : t.type === "WITHDRAWAL" ? "Withdrawal" : credit ? "Refund" : "Booking payment");
+            return (
+              <div key={t.id} className="flex items-center gap-3 rounded-[15px] border border-line bg-white px-3.5 py-3">
+                <div className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] bg-surface-lav text-[17px]">{icon}</div>
+                <div className="flex-1">
+                  <div className="text-[13.5px] font-semibold leading-tight">{label}</div>
+                  <div className="text-[11.5px] text-muted-faint">{new Date(t.createdAt).toLocaleDateString("en-ZA", { day: "numeric", month: "short" })} · {t.status === "PENDING" ? "Pending" : t.status === "EARNED" ? "Available" : "Settled"}</div>
+                </div>
+                <div className={`font-display text-[14.5px] font-bold ${credit ? "text-money" : "text-ink"}`}>{credit ? "+" : "−"}{formatZar(Math.abs(t.amountCents))}</div>
               </div>
-              <div className="text-right">
-                <div className="font-display text-[14.5px] font-bold text-money">+{formatZar(r.status === "PENDING" ? settings.referrerRewardCents : r.rewardCents)}</div>
-                <div className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${r.status === "PENDING" ? "bg-[#fdf2e3] text-orange-deep" : "bg-[#e6f6ed] text-money"}`}>{r.status === "PENDING" ? "Pending" : r.status === "PAID" ? "Paid out" : "Earned"}</div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </AppShell>

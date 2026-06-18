@@ -124,6 +124,15 @@ export default async function TrackPage({
             <button className="w-full rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-white py-3 text-[13px] font-semibold text-muted">▶ Demo: advance status</button>
           </form>
         ) : null}
+
+        {/* A paid booking can still be cancelled (refunded to wallet) until a cleaner is assigned. */}
+        {booking.paymentStatus === "PAID" && booking.status === "CONFIRMED" && (
+          <form action={cancelBookingAction.bind(null, booking.reference)} className="mt-4 text-center">
+            <button className="text-[12.5px] font-semibold text-muted-soft underline-offset-2 hover:text-[#d05656] hover:underline">
+              Cancel booking &amp; refund {formatZar(booking.totalCents)} to my wallet
+            </button>
+          </form>
+        )}
         <div className="h-4" />
       </div>
     </AppShell>
