@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { appendLedger } from "@/lib/wallet";
 import { getSettings } from "@/lib/settings";
 import { notifyUser } from "@/lib/notify";
+import { sendBookingConfirmationEmail, sendHelperAssignedEmail, sendBookingCompletedEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
 import { bookingReference } from "@/lib/reference";
 import type { BookingStatus } from "@prisma/client";
@@ -43,12 +44,33 @@ export async function advanceBooking(reference: string): Promise<void> {
 
   await prisma.booking.update({ where: { id: booking.id }, data: { status: next, helperId } });
 
+  if (next === "HELPER_ASSIGNED" && helperId) {
+    // Reached here only when the booking was still CONFIRMED (no auto-match at
+    // payment), so this is the first assignment notice — not a duplicate.
+    const [customer, helper] = await Promise.all([
+      prisma.user.findUnique({ where: { id: booking.customerId }, select: { email: true, fullName: true } }),
+      prisma.helperProfile.findUnique({ where: { id: helperId }, select: { user: { select: { fullName: true } } } }),
+    ]);
+    await notifyUser(booking.customerId, "Cleaner assigned", "A vetted cleaner has been assigned to your booking.");
+    if (customer && helper) {
+      try {
+        await sendHelperAssignedEmail({ to: customer.email, fullName: customer.fullName, reference, helperName: helper.user.fullName });
+      } catch { /* best-effort */ }
+    }
+  }
+
   if (next === "COMPLETED") {
     if (helperId) {
       await prisma.helperProfile.update({ where: { id: helperId }, data: { completedJobs: { increment: 1 } } });
     }
     await scheduleNextRecurrence(reference);
     await notifyUser(booking.customerId, "Clean completed", "Your clean is done — tap to rate your cleaner ⭐");
+    const customer = await prisma.user.findUnique({ where: { id: booking.customerId }, select: { email: true, fullName: true } });
+    if (customer) {
+      try {
+        await sendBookingCompletedEmail({ to: customer.email, fullName: customer.fullName, reference });
+      } catch { /* best-effort */ }
+    }
   }
 }
 
@@ -109,7 +131,7 @@ async function scheduleNextRecurrence(reference: string): Promise<void> {
 export async function markBookingPaid(reference: string, providerRef?: string): Promise<void> {
   const settings = await getSettings();
 
-  await prisma.$transaction(async (tx) => {
+  const newlyPaid = await prisma.$transaction(async (tx) => {
     // Lock the booking row first so concurrent ITN deliveries (Payfast retries
     // aggressively) serialize here. Without the lock both could read
     // paymentStatus != "PAID" under READ COMMITTED and double-credit the
@@ -120,7 +142,7 @@ export async function markBookingPaid(reference: string, providerRef?: string): 
       include: { payment: true, referral: true },
     });
     if (!booking) throw new Error("Booking not found");
-    if (booking.paymentStatus === "PAID") return; // already fulfilled
+    if (booking.paymentStatus === "PAID") return false; // already fulfilled — skip side effects
 
     await tx.booking.update({
       where: { id: booking.id },
@@ -150,15 +172,25 @@ export async function markBookingPaid(reference: string, providerRef?: string): 
         ref: `Referral · booking ${booking.reference}`,
       });
     }
+    return true; // newly paid this call
   });
 
-  // Side effects outside the money transaction.
-  const booking = await prisma.booking.findUnique({
-    where: { reference },
-    include: { referral: true, customer: true },
-  });
+  // Side effects run only on the transition to paid, so a retried ITN delivery
+  // never re-notifies or re-emails the customer.
+  const booking = newlyPaid
+    ? await prisma.booking.findUnique({
+        where: { reference },
+        include: { referral: true, customer: true, service: { select: { name: true } } },
+      })
+    : null;
   if (booking) {
     await notifyUser(booking.customerId, "Booking confirmed", `Your booking ${booking.reference} is confirmed and paid.`);
+    try {
+      await sendBookingConfirmationEmail({
+        to: booking.customer.email, fullName: booking.customer.fullName, reference: booking.reference,
+        serviceName: booking.service.name, scheduledAt: booking.scheduledAt, totalCents: booking.totalCents,
+      });
+    } catch { /* email is best-effort */ }
     if (booking.referral?.status === "EARNED") {
       await notifyUser(
         booking.referral.referrerId,
@@ -186,13 +218,17 @@ export async function markBookingPaid(reference: string, providerRef?: string): 
  * isn't paid/confirmed, already has a helper, or no helper serves the area yet.
  */
 export async function assignHelper(reference: string): Promise<void> {
-  const booking = await prisma.booking.findUnique({ where: { reference } });
+  const booking = await prisma.booking.findUnique({ where: { reference }, include: { customer: { select: { email: true, fullName: true } } } });
   if (!booking || booking.paymentStatus !== "PAID" || booking.status !== "CONFIRMED" || booking.helperId) return;
   const helper = await prisma.helperProfile.findFirst({
     where: { status: "APPROVED", areas: { some: { id: booking.areaId } } },
     orderBy: { rating: "desc" },
+    include: { user: { select: { fullName: true } } },
   });
   if (!helper) return; // no helper serves this area yet; leave CONFIRMED for later
   await prisma.booking.update({ where: { id: booking.id }, data: { status: "HELPER_ASSIGNED", helperId: helper.id } });
   await notifyUser(booking.customerId, "Cleaner assigned", "A vetted cleaner has been assigned to your booking.");
+  try {
+    await sendHelperAssignedEmail({ to: booking.customer.email, fullName: booking.customer.fullName, reference: booking.reference, helperName: helper.user.fullName });
+  } catch { /* email is best-effort */ }
 }

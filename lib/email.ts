@@ -79,6 +79,68 @@ export async function sendWelcomeEmail(opts: { to: string; fullName: string }): 
   await sendEmail({ to: opts.to, subject: "Welcome to Household Maids", text });
 }
 
+// ---------------------------------------------------------------------------
+// Transactional emails. All are best-effort — callers wrap them in try/catch so
+// a mail failure never blocks the underlying booking/payment/payout action.
+
+import { formatZar } from "@/lib/money";
+
+const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://householdmaids.vercel.app";
+const firstName = (n: string) => n.trim().split(" ")[0] || "there";
+
+export async function sendBookingConfirmationEmail(o: { to: string; fullName: string; reference: string; serviceName: string; scheduledAt: Date; totalCents: number }): Promise<void> {
+  const when = o.scheduledAt.toLocaleString("en-ZA", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  const text = [
+    `Hi ${firstName(o.fullName)},`,
+    `Your booking is confirmed and paid. Thank you!`,
+    `Service: ${o.serviceName}\nWhen: ${when}\nTotal paid: ${formatZar(o.totalCents)}\nReference: ${o.reference}`,
+    `We're matching you with a vetted cleaner and will let you know the moment they're assigned.`,
+    `Track your booking: ${BASE}/app/bookings/${o.reference}`,
+    `The Household Maids team`,
+  ].join("\n\n");
+  await sendEmail({ to: o.to, subject: `Booking confirmed · ${o.reference}`, text });
+}
+
+export async function sendHelperAssignedEmail(o: { to: string; fullName: string; reference: string; helperName: string }): Promise<void> {
+  const text = [
+    `Hi ${firstName(o.fullName)},`,
+    `Good news — ${o.helperName}, a vetted Household Maids cleaner, has been assigned to your booking ${o.reference}.`,
+    `You can message them and follow their progress here: ${BASE}/app/bookings/${o.reference}`,
+    `The Household Maids team`,
+  ].join("\n\n");
+  await sendEmail({ to: o.to, subject: `Your cleaner is assigned · ${o.reference}`, text });
+}
+
+export async function sendBookingCompletedEmail(o: { to: string; fullName: string; reference: string }): Promise<void> {
+  const text = [
+    `Hi ${firstName(o.fullName)},`,
+    `Your clean is complete. We hope your space is sparkling!`,
+    `Please take a moment to rate your cleaner — it helps us keep standards high: ${BASE}/app/rate/${o.reference}`,
+    `The Household Maids team`,
+  ].join("\n\n");
+  await sendEmail({ to: o.to, subject: `How did we do? · ${o.reference}`, text });
+}
+
+export async function sendRefundEmail(o: { to: string; fullName: string; reference: string; amountCents: number }): Promise<void> {
+  const text = [
+    `Hi ${firstName(o.fullName)},`,
+    `Your booking ${o.reference} has been cancelled and ${formatZar(o.amountCents)} has been credited to your Household Maids wallet.`,
+    `You can use this balance towards your next booking: ${BASE}/app/wallet`,
+    `The Household Maids team`,
+  ].join("\n\n");
+  await sendEmail({ to: o.to, subject: `Refunded to your wallet · ${o.reference}`, text });
+}
+
+export async function sendPayoutPaidEmail(o: { to: string; fullName: string; reference: string; amountCents: number }): Promise<void> {
+  const text = [
+    `Hi ${firstName(o.fullName)},`,
+    `Your payout of ${formatZar(o.amountCents)} (reference ${o.reference}) has been processed to your bank account.`,
+    `Please allow up to one business day for it to reflect.`,
+    `The Household Maids team`,
+  ].join("\n\n");
+  await sendEmail({ to: o.to, subject: `Payout sent · ${formatZar(o.amountCents)}`, text });
+}
+
 function wrapHtml(text: string): string {
   return `<div style="font-family:system-ui,sans-serif;color:#201F4D;line-height:1.6">${text
     .split("\n")

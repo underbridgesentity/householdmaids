@@ -15,7 +15,7 @@ import { bookingReference, referralCodeFor } from "@/lib/reference";
 import { markBookingPaid, advanceBooking, assignHelper } from "@/lib/booking";
 import { appendLedger } from "@/lib/wallet";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendWelcomeEmail, sendRefundEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
 
 export type BookingState = { error?: string } | undefined;
@@ -209,6 +209,11 @@ export async function cancelBookingAction(reference: string): Promise<void> {
     }
   });
   await audit({ actorId: user.id, action: "booking.cancelled", entity: "Booking", entityId: reference, meta: { refundedCents: isPaid ? booking.totalCents : 0 } });
+  if (isPaid && user.email) {
+    try {
+      await sendRefundEmail({ to: user.email, fullName: user.name ?? "there", reference: booking.reference, amountCents: booking.totalCents });
+    } catch { /* best-effort */ }
+  }
   revalidatePath("/app/bookings");
   revalidatePath("/app/wallet");
   revalidatePath(`/app/bookings/${reference}`);

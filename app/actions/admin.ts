@@ -9,6 +9,7 @@ import { randsToCents } from "@/lib/money";
 import { decrypt } from "@/lib/crypto";
 import { getPayoutAdapter, type PayoutInstruction } from "@/lib/payout";
 import { createHelperAccount } from "@/lib/helper-admin";
+import { sendPayoutPaidEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
 
 // ---- Manually load helpers (admin) ----------------------------------------
@@ -178,16 +179,29 @@ export async function deleteServiceAction(id: string): Promise<void> {
 export async function approveHelperAction(profileId: string): Promise<void> {
   const admin = await assertRole("ADMIN");
   // Only approve a helper still under review. Guards against a stale/duplicate
-  // submit flipping a REJECTED helper back to APPROVED (which would also
-  // re-stamp backgroundCheckPassed and feed them into live job assignment).
+  // submit flipping a REJECTED helper back to APPROVED.
+  // NOTE: the background-check flag is now tracked SEPARATELY (setBackgroundCheckAction)
+  // and is no longer auto-stamped on approval — approval and the background
+  // check are independent decisions an admin records explicitly.
   const res = await prisma.helperProfile.updateMany({
     where: { id: profileId, status: { in: ["PENDING", "IN_REVIEW"] } },
-    data: { status: "APPROVED", backgroundCheckPassed: true },
+    data: { status: "APPROVED" },
   });
   if (res.count > 0) {
     await audit({ actorId: admin.id, action: "helper.approved", entity: "HelperProfile", entityId: profileId });
   }
   redirect("/admin/vetting");
+}
+
+/** Records the background-check outcome independently of approval status. */
+export async function setBackgroundCheckAction(formData: FormData): Promise<void> {
+  const admin = await assertRole("ADMIN");
+  const profileId = String(formData.get("profileId") ?? "");
+  const passed = String(formData.get("passed") ?? "") === "true";
+  if (!profileId) redirect("/admin/vetting");
+  await prisma.helperProfile.update({ where: { id: profileId }, data: { backgroundCheckPassed: passed } });
+  await audit({ actorId: admin.id, action: "helper.backgroundCheck", entity: "HelperProfile", entityId: profileId, meta: { passed } });
+  redirect(`/admin/vetting/${profileId}`);
 }
 
 export async function rejectHelperAction(profileId: string): Promise<void> {
@@ -251,20 +265,46 @@ export async function runFridayPayoutAction(): Promise<void> {
     data: { status: "PAID", paidAt: new Date() },
   });
 
+  // Tell each beneficiary their payout was sent (best-effort).
+  for (const req of requests) {
+    try {
+      await sendPayoutPaidEmail({ to: req.user.email, fullName: req.user.fullName, reference: req.reference, amountCents: req.amountCents });
+    } catch { /* best-effort */ }
+  }
+
   await audit({ actorId: admin.id, action: "payout.fridayRun", entity: "PayoutCycle", entityId: cycleId, meta: { batchRef, totalCents: total, count: instructions.length } });
   redirect(`/admin/payouts?ran=1&cycle=${cycleId}`);
 }
 
 export async function approvePayoutAction(id: string): Promise<void> {
   const admin = await assertRole("ADMIN");
-  await prisma.payoutRequest.update({ where: { id }, data: { status: "PAID", paidAt: new Date() } });
+  // Only pay out a requested row — guards a double-approve and prevents paying a
+  // held row without releasing it first.
+  const res = await prisma.payoutRequest.updateMany({ where: { id, status: "REQUESTED" }, data: { status: "PAID", paidAt: new Date() } });
+  if (res.count > 0) {
+    const req = await prisma.payoutRequest.findUnique({ where: { id }, include: { user: { select: { email: true, fullName: true } } } });
+    if (req) {
+      try {
+        await sendPayoutPaidEmail({ to: req.user.email, fullName: req.user.fullName, reference: req.reference, amountCents: req.amountCents });
+      } catch { /* best-effort */ }
+    }
+  }
   await audit({ actorId: admin.id, action: "payout.approved", entity: "PayoutRequest", entityId: id });
   redirect("/admin/payouts");
 }
 
 export async function holdPayoutAction(id: string): Promise<void> {
   const admin = await assertRole("ADMIN");
-  await prisma.payoutRequest.update({ where: { id }, data: { status: "HELD" } });
+  // Only a still-requested payout can be put on hold (not one already paid).
+  await prisma.payoutRequest.updateMany({ where: { id, status: "REQUESTED" }, data: { status: "HELD" } });
   await audit({ actorId: admin.id, action: "payout.held", entity: "PayoutRequest", entityId: id });
+  redirect("/admin/payouts");
+}
+
+/** Releases a held payout back into the requested queue so it can be paid. */
+export async function releasePayoutAction(id: string): Promise<void> {
+  const admin = await assertRole("ADMIN");
+  await prisma.payoutRequest.updateMany({ where: { id, status: "HELD" }, data: { status: "REQUESTED" } });
+  await audit({ actorId: admin.id, action: "payout.released", entity: "PayoutRequest", entityId: id });
   redirect("/admin/payouts");
 }
