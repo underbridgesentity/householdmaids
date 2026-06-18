@@ -45,6 +45,9 @@ const config: Config = {
         "brand-gradient-160": "linear-gradient(160deg,#4A2C7C 0%,#7A2E89 100%)",
         "hero-gradient": "linear-gradient(155deg,#4A2C7C 0%,#3C2168 58%,#4A2C7C 100%)",
         "wallet-gradient": "linear-gradient(160deg,#A22D8F,#6B2F8A 70%,#4A2C7C)",
+        // Admin console: a deep indigo sidebar and a softly-lit light workspace.
+        "admin-sidebar": "linear-gradient(184deg,#2a1748 0%,#3a2063 52%,#2c1850 100%)",
+        "admin-grid": "radial-gradient(1100px 480px at 100% -8%,#efe9f7 0%,#f5f3fa 46%,#f3f1f8 100%)",
       },
       borderRadius: {
         xl2: "18px",
