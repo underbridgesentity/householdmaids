@@ -93,6 +93,13 @@ export const helperApplicationSchema = z.object({
   accountNumber: z.string().min(4).max(30),
   accountType: z.string().min(2).max(30),
   clearanceConsent: z.coerce.boolean(),
+  // At least one contactable reference is required; a second is optional.
+  ref1Name: z.string().min(2).max(80),
+  ref1Phone: z.string().min(6).max(20),
+  ref1Relationship: z.string().max(60).optional().or(z.literal("")),
+  ref2Name: z.string().max(80).optional().or(z.literal("")),
+  ref2Phone: z.string().max(20).optional().or(z.literal("")),
+  ref2Relationship: z.string().max(60).optional().or(z.literal("")),
 });
 
 export const serviceUpsertSchema = z.object({

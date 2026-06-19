@@ -22,7 +22,7 @@ export default async function VettingDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const p = await prisma.helperProfile.findUnique({
     where: { id },
-    include: { user: true, areas: true, documents: { orderBy: { createdAt: "asc" } } },
+    include: { user: true, areas: true, documents: { orderBy: { createdAt: "asc" } }, references: { orderBy: { createdAt: "asc" } } },
   });
   if (!p) notFound();
 
@@ -66,6 +66,22 @@ export default async function VettingDetailPage({ params }: { params: Promise<{ 
                   <a key={d.id} href={`/api/helper-docs/${d.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-[11px] border border-line-input bg-white px-3.5 py-2.5 text-[13px] font-semibold text-indigo-brand transition hover:bg-surface-lav">
                     <FileText size={15} /> {DOC_LABELS[d.type] ?? "Document"}{d.verified && <span className="text-money">✓</span>}
                   </a>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card title={`References (${p.references.length})`}>
+            {p.references.length === 0 ? <p className="text-[13px] text-muted">No references provided.</p> : (
+              <div className="flex flex-col gap-2.5">
+                {p.references.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-3 rounded-[11px] bg-[#faf8fc] px-3.5 py-2.5">
+                    <div className="min-w-0">
+                      <div className="truncate text-[13.5px] font-semibold text-ink">{r.name}</div>
+                      {r.relationship && <div className="truncate text-[11.5px] text-muted-faint">{r.relationship}</div>}
+                    </div>
+                    <a href={`tel:${r.phone.replace(/\s+/g, "")}`} className="flex-shrink-0 text-[13px] font-bold text-magenta-brand">{r.phone}</a>
+                  </div>
                 ))}
               </div>
             )}

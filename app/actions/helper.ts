@@ -48,8 +48,17 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
   // Validate uploaded documents BEFORE creating any records.
   const idDoc = validDocFile(formData.get("idDoc"));
   const selfie = validDocFile(formData.get("selfie"));
-  if (idDoc === "invalid" || selfie === "invalid") {
+  // The police-clearance certificate is optional (some applicants don't have one
+  // yet — we run the check with their consent), but if supplied it must be valid.
+  const clearanceDoc = validDocFile(formData.get("clearanceDoc"));
+  if (idDoc === "invalid" || selfie === "invalid" || clearanceDoc === "invalid") {
     return { error: "Documents must be an image or PDF no larger than 8MB." };
+  }
+
+  // Reference contacts (first required, second optional).
+  const references = [{ name: input.ref1Name, phone: input.ref1Phone, relationship: input.ref1Relationship || null }];
+  if (input.ref2Name && input.ref2Phone) {
+    references.push({ name: input.ref2Name, phone: input.ref2Phone, relationship: input.ref2Relationship || null });
   }
 
   const existing = await prisma.user.findUnique({ where: { email: lower } });
@@ -84,9 +93,10 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
         bankAccountEnc: bankEnc,
         idUploaded: !!idDoc,
         selfieUploaded: !!selfie,
-        referencesAdded: true,
+        referencesAdded: references.length > 0,
         clearanceConsent: input.clearanceConsent,
         areas: { connect: input.areaIds.map((id) => ({ id })) },
+        references: { create: references },
       },
     });
 
@@ -107,6 +117,13 @@ export async function submitHelperApplicationAction(formData: FormData): Promise
       const { storageKey } = await storeDocument(profileId, selfie.name, bytes);
       await prisma.helperDocument.create({
         data: { helperId: profileId, type: "SELFIE", storageKey },
+      });
+    }
+    if (clearanceDoc) {
+      const bytes = Buffer.from(await clearanceDoc.arrayBuffer());
+      const { storageKey } = await storeDocument(profileId, clearanceDoc.name, bytes);
+      await prisma.helperDocument.create({
+        data: { helperId: profileId, type: "POLICE_CLEARANCE", storageKey },
       });
     }
   } catch {

@@ -28,6 +28,13 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
   const [accountNumber, setAccountNumber] = useState("");
   const [accountType, setAccountType] = useState("Cheque");
   const [clearanceConsent, setClearanceConsent] = useState(false);
+  const [clearanceFile, setClearanceFile] = useState<File | null>(null);
+  const [ref1Name, setRef1Name] = useState("");
+  const [ref1Phone, setRef1Phone] = useState("");
+  const [ref1Rel, setRef1Rel] = useState("");
+  const [ref2Name, setRef2Name] = useState("");
+  const [ref2Phone, setRef2Phone] = useState("");
+  const [ref2Rel, setRef2Rel] = useState("");
 
   const progress = [33, 66, 100][step];
 
@@ -40,7 +47,7 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
   );
 
   const step1Ready = fullName && email && phone && password.length >= 8 && idNumber && idFile && selfieFile;
-  const step2Ready = areaIds.length > 0 && yearsExperience !== "" && clearanceConsent;
+  const step2Ready = areaIds.length > 0 && yearsExperience !== "" && clearanceConsent && ref1Name.trim() && ref1Phone.trim();
   const step3Ready = bank && accountNumber && accountType;
 
   async function submit() {
@@ -58,8 +65,15 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
     fd.set("accountNumber", accountNumber);
     fd.set("accountType", accountType);
     fd.set("clearanceConsent", clearanceConsent ? "true" : "false");
+    fd.set("ref1Name", ref1Name);
+    fd.set("ref1Phone", ref1Phone);
+    fd.set("ref1Relationship", ref1Rel);
+    fd.set("ref2Name", ref2Name);
+    fd.set("ref2Phone", ref2Phone);
+    fd.set("ref2Relationship", ref2Rel);
     if (idFile) fd.set("idDoc", idFile);
     if (selfieFile) fd.set("selfie", selfieFile);
+    if (clearanceFile) fd.set("clearanceDoc", clearanceFile);
     try {
       const res = await submitHelperApplicationAction(fd);
       if (res?.error) {
@@ -202,11 +216,23 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
               className="field mb-5 bg-white"
             />
 
+            {/* Contactable references */}
+            <div className="mb-1.5 px-0.5 font-display text-sm font-bold text-muted-label">Contactable references</div>
+            <div className="mb-2 px-0.5 text-[12px] text-muted">A previous employer or someone who can vouch for your work. At least one required.</div>
+            <div className="mb-3 rounded-[15px] border border-line bg-white p-3.5">
+              <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted-faint">Reference 1</div>
+              <input value={ref1Name} onChange={(e) => setRef1Name(e.target.value)} placeholder="Full name" className="field mb-2.5 bg-white" />
+              <input value={ref1Phone} onChange={(e) => setRef1Phone(e.target.value)} placeholder="Phone number" className="field mb-2.5 bg-white" />
+              <input value={ref1Rel} onChange={(e) => setRef1Rel(e.target.value)} placeholder="Relationship (e.g. former employer)" className="field bg-white" />
+            </div>
+            <div className="mb-5 rounded-[15px] border border-line bg-white p-3.5">
+              <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted-faint">Reference 2 · optional</div>
+              <input value={ref2Name} onChange={(e) => setRef2Name(e.target.value)} placeholder="Full name" className="field mb-2.5 bg-white" />
+              <input value={ref2Phone} onChange={(e) => setRef2Phone(e.target.value)} placeholder="Phone number" className="field mb-2.5 bg-white" />
+              <input value={ref2Rel} onChange={(e) => setRef2Rel(e.target.value)} placeholder="Relationship" className="field bg-white" />
+            </div>
+
             <div className="flex flex-col gap-2.5">
-              <div className="flex items-center gap-3 rounded-[15px] border border-line bg-white p-3.5">
-                <div className="text-xl">📇</div>
-                <div className="flex-1 font-display text-[13.5px] font-semibold text-muted">We&apos;ll request 2 contactable references after you apply.</div>
-              </div>
               <button
                 type="button"
                 onClick={() => setClearanceConsent((v) => !v)}
@@ -219,6 +245,14 @@ export function HelperApplication({ areas }: { areas: Area[] }) {
                   <div className="text-[12.5px] text-muted">I consent to Household Maids running a police clearance / background check as part of vetting.</div>
                 </div>
               </button>
+              <label className="flex cursor-pointer items-center gap-3 rounded-[15px] border-[1.5px] border-dashed border-[#cfc6dd] bg-surface-lav p-3.5 text-left">
+                <input type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setClearanceFile(e.target.files?.[0] ?? null)} />
+                <div className="text-xl">🛡️</div>
+                <div className="flex-1">
+                  <div className="font-display text-[13.5px] font-bold">Police clearance certificate <span className="font-semibold text-muted">· optional</span></div>
+                  <div className="truncate text-[12px] font-semibold text-money">{clearanceFile ? `✓ ${clearanceFile.name}` : "Already have one? Upload it to speed up vetting."}</div>
+                </div>
+              </label>
             </div>
             <div className="h-4" />
           </div>

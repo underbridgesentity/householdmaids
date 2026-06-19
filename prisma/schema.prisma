@@ -281,6 +281,18 @@ model HelperProfile {
   documents HelperDocument[]
   bookings  Booking[]
   reviews   Review[]          @relation("HelperReviews")
+  references HelperReference[]
+}
+
+/// A contactable reference supplied by a helper applicant during vetting.
+model HelperReference {
+  id           String        @id @default(cuid())
+  helperId     String
+  helper       HelperProfile @relation(fields: [helperId], references: [id], onDelete: Cascade)
+  name         String
+  relationship String?
+  phone        String
+  createdAt    DateTime      @default(now())
 }
 
 model HelperDocument {

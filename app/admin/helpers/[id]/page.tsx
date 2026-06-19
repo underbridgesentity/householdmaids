@@ -20,7 +20,7 @@ export default async function HelperProfilePage({ params }: { params: Promise<{ 
   const h = await prisma.helperProfile.findUnique({
     where: { id },
     include: {
-      user: true, areas: true, documents: { orderBy: { createdAt: "asc" } },
+      user: true, areas: true, documents: { orderBy: { createdAt: "asc" } }, references: { orderBy: { createdAt: "asc" } },
       bookings: { orderBy: { scheduledAt: "desc" }, take: 10, include: { service: { select: { name: true, emoji: true, tint: true } }, area: { select: { name: true } }, customer: { select: { fullName: true } } } },
     },
   });
@@ -83,6 +83,19 @@ export default async function HelperProfilePage({ params }: { params: Promise<{ 
               {h.backgroundCheckPassed ? <ShieldCheck size={17} /> : <ShieldAlert size={17} />}
               {h.backgroundCheckPassed ? "Passed" : "Pending"}
             </div>
+          </Card>
+
+          <Card title={`References (${h.references.length})`}>
+            {h.references.length === 0 ? <p className="text-[13px] text-muted">No references on file.</p> : (
+              <div className="flex flex-col gap-2">
+                {h.references.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-3 rounded-[11px] bg-[#faf8fc] px-3 py-2">
+                    <div className="min-w-0"><div className="truncate text-[13px] font-semibold text-ink">{r.name}</div>{r.relationship && <div className="truncate text-[11px] text-muted-faint">{r.relationship}</div>}</div>
+                    <a href={`tel:${r.phone.replace(/\s+/g, "")}`} className="flex-shrink-0 text-[12.5px] font-bold text-magenta-brand">{r.phone}</a>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card title="Documents">
