@@ -7,8 +7,8 @@ import { sendSupportMessageAction } from "@/app/actions/support";
 
 export const dynamic = "force-dynamic";
 
-export default async function MessagesPage() {
-  const user = await requireRole("CUSTOMER");
+export default async function HelperMessagesPage() {
+  const user = await requireRole("HELPER");
   const threadId = await getOrCreateThread(user.id);
   await markThreadRead(threadId, "user");
   const messages = await prisma.supportMessage.findMany({ where: { threadId }, orderBy: { createdAt: "asc" } });
@@ -22,16 +22,16 @@ export default async function MessagesPage() {
   }));
 
   return (
-    <AppShell tabs={false} narrow>
+    <AppShell variant="helper" tabs={false} narrow>
       <SupportChat
         title="Household Maids"
-        subtitle="Questions about a booking? Message us here."
+        subtitle="Message the team about a job, timing or access."
         avatar="HM"
         messages={mapped}
         action={sendSupportMessageAction}
-        backHref="/app"
-        placeholder="Message Household Maids…"
-        emptyHint="Need a hand with a booking, timing, or access? Message us and the Household Maids team will reply here."
+        backHref="/helper/dashboard"
+        placeholder="Message the team…"
+        emptyHint="Running late, can't reach a customer, or need a hand? Message the Household Maids team here."
       />
     </AppShell>
   );

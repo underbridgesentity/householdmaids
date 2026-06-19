@@ -93,7 +93,10 @@ export default async function WalletPage() {
         </div>
 
         {/* Recent activity (referral earnings, booking refunds, payments, payouts) */}
-        <h3 className="mb-3 mt-5 px-0.5 font-display text-base font-bold">Recent activity</h3>
+        <div className="mb-3 mt-5 flex items-center justify-between px-0.5">
+          <h3 className="font-display text-base font-bold">Recent activity</h3>
+          <Link href="/app/activity" className="text-[13px] font-bold text-magenta-brand">See all ›</Link>
+        </div>
         <div className="flex flex-col gap-2.5 pb-6">
           {activity.length === 0 && <div className="card p-4 text-center text-[13px] text-muted">No activity yet. Share your referral link to start earning.</div>}
           {activity.map((t) => {

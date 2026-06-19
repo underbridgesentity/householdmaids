@@ -78,6 +78,21 @@ export default async function HomePage() {
           </Link>
         )}
 
+        {/* Quick actions */}
+        <div className="mt-3.5 grid grid-cols-4 gap-2.5">
+          {[
+            { href: "/app/book", icon: "🧽", label: "Book" },
+            { href: "/app/bookings", icon: "🗓️", label: "Bookings" },
+            { href: "/app/activity", icon: "📂", label: "Activity" },
+            { href: "/app/messages", icon: "💬", label: "Messages" },
+          ].map((a) => (
+            <Link key={a.href} href={a.href} className="flex flex-col items-center gap-1.5 rounded-[16px] border border-line bg-white py-3 shadow-card">
+              <span className="text-[20px]">{a.icon}</span>
+              <span className="text-[11.5px] font-bold text-ink">{a.label}</span>
+            </Link>
+          ))}
+        </div>
+
         {/* Referral banner */}
         <Link href="/app/wallet" className="relative mt-3.5 flex items-center gap-3.5 overflow-hidden rounded-[20px] bg-gradient-to-r from-magenta-brand to-purple-deep p-4 text-white shadow-card">
           <div className="absolute -right-5 -top-5 text-[90px] opacity-[.14]">💸</div>

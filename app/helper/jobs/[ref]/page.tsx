@@ -77,10 +77,10 @@ export default async function HelperJobPage({ params }: { params: Promise<{ ref:
         </div>
 
         <Link
-          href={`/helper/jobs/${booking.reference}/chat`}
+          href="/helper/messages"
           className="mt-4 flex w-full items-center justify-center rounded-[15px] border-[1.5px] border-[#e7d7ec] bg-surface-pink py-3 text-center font-display text-[14px] font-bold text-magenta-brand"
         >
-          💬 Message customer
+          💬 Message Household Maids
         </Link>
 
         {isCompleted ? (

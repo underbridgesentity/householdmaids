@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, CalendarRange, Users, UserCog, BadgeCheck, Banknote,
-  Ticket, Inbox, BarChart3, Tag, Menu, X, LogOut, Mail,
+  Ticket, Inbox, BarChart3, Tag, Menu, X, LogOut, Mail, MessageCircle,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { logoutAction } from "@/app/actions/auth";
@@ -18,6 +18,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     items: [
       { href: "/admin/bookings", label: "Bookings", icon: CalendarRange },
       { href: "/admin/customers", label: "Customers", icon: Users },
+      { href: "/admin/support", label: "Support", icon: MessageCircle },
       { href: "/admin/helpers", label: "Helpers", icon: UserCog },
       { href: "/admin/vetting", label: "Vetting", icon: BadgeCheck },
     ],
@@ -44,7 +45,7 @@ function active(href: string, pathname: string, exact?: boolean) {
   return exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 }
 
-export function AdminShell({ children, userName, userEmail }: { children: React.ReactNode; userName: string; userEmail?: string }) {
+export function AdminShell({ children, userName, userEmail, supportUnread = 0 }: { children: React.ReactNode; userName: string; userEmail?: string; supportUnread?: number }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -68,6 +69,9 @@ export function AdminShell({ children, userName, userEmail }: { children: React.
                   {on && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-orange-brand" />}
                   <it.icon size={17.5} strokeWidth={on ? 2.4 : 2} className={on ? "text-white" : "text-white/55 group-hover:text-white/80"} />
                   <span>{it.label}</span>
+                  {it.href === "/admin/support" && supportUnread > 0 && (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-magenta-brand px-1.5 text-[11px] font-bold text-white">{supportUnread}</span>
+                  )}
                 </Link>
               );
             })}

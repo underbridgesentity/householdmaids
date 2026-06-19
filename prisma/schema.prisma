@@ -120,6 +120,37 @@ model User {
   auditLogs      AuditLog[]
   resetTokens    PasswordResetToken[]
   communications CommunicationLog[]
+  supportThread  SupportThread?
+  supportMessages SupportMessage[]
+}
+
+/// A single support conversation between one user (customer or helper) and the
+/// Household Maids team (admins). Replaces direct customer↔cleaner chat so all
+/// communication is centralised. Read state is tracked per side via timestamps.
+model SupportThread {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime?
+  userReadAt    DateTime? // when the user last viewed the thread
+  adminReadAt   DateTime? // when an admin last viewed the thread
+  createdAt     DateTime @default(now())
+  messages      SupportMessage[]
+
+  @@index([lastMessageAt])
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  threadId  String
+  thread    SupportThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User          @relation(fields: [senderId], references: [id])
+  fromAdmin Boolean       @default(false) // true = sent by the Household Maids team
+  body      String
+  createdAt DateTime      @default(now())
+
+  @@index([threadId, createdAt])
 }
 
 /// A record of an email sent to a customer (admin one-off or transactional),

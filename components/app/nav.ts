@@ -22,6 +22,7 @@ export const CUSTOMER_NAV: NavItem[] = [
 
 export const HELPER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/helper/dashboard", icon: Home, also: ["/helper/jobs"] },
+  { label: "Messages", href: "/helper/messages", icon: MessageCircle },
 ];
 
 export function isActive(item: NavItem, pathname: string): boolean {
