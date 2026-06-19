@@ -9,7 +9,8 @@ import { randsToCents, formatZar } from "@/lib/money";
 import { storeEncryptedFile, validUpload } from "@/lib/storage";
 import { createHelperAccount } from "@/lib/helper-admin";
 import { sendPayoutPaidEmail } from "@/lib/email";
-import { logCustomerEmail } from "@/lib/notify";
+import { logCustomerEmail, notifyUser } from "@/lib/notify";
+import { appendLedger } from "@/lib/wallet";
 import { audit } from "@/lib/audit";
 
 // ---- Manually load helpers (admin) ----------------------------------------
@@ -308,5 +309,25 @@ export async function releasePayoutAction(id: string): Promise<void> {
   const admin = await assertRole("ADMIN");
   await prisma.payoutRequest.updateMany({ where: { id, status: "HELD" }, data: { status: "REQUESTED" } });
   await audit({ actorId: admin.id, action: "payout.released", entity: "PayoutRequest", entityId: id });
+  redirect("/admin/payouts");
+}
+
+/**
+ * Cancels a requested/held payout and REFUNDS the amount back to the customer's
+ * wallet. Use when a withdrawal must be denied (e.g. bad bank details) — without
+ * this the wallet stays debited from when the withdrawal was requested. The
+ * updateMany acts as an atomic claim, so a double-click can't refund twice.
+ */
+export async function cancelPayoutAction(id: string): Promise<void> {
+  const admin = await assertRole("ADMIN");
+  await prisma.$transaction(async (tx) => {
+    const claim = await tx.payoutRequest.updateMany({ where: { id, status: { in: ["REQUESTED", "HELD"] } }, data: { status: "CANCELLED" } });
+    if (claim.count === 0) return; // already paid/processing/cancelled — no-op
+    const req = await tx.payoutRequest.findUnique({ where: { id }, select: { userId: true, amountCents: true, reference: true } });
+    if (!req) return;
+    await appendLedger(tx, { userId: req.userId, type: "ADJUSTMENT", amountCents: req.amountCents, status: "EARNED", ref: `Withdrawal cancelled ${req.reference}` });
+    await notifyUser(req.userId, "Withdrawal cancelled", `Your withdrawal of R${Math.round(req.amountCents / 100)} was cancelled and returned to your wallet.`);
+  });
+  await audit({ actorId: admin.id, action: "payout.cancelled", entity: "PayoutRequest", entityId: id });
   redirect("/admin/payouts");
 }

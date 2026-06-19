@@ -3,7 +3,7 @@ import { Download, FileDown, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { formatZar } from "@/lib/money";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { exportPayoutBatchAction, confirmPayoutBatchAction, approvePayoutAction, holdPayoutAction, releasePayoutAction } from "@/app/actions/admin";
+import { exportPayoutBatchAction, confirmPayoutBatchAction, approvePayoutAction, holdPayoutAction, releasePayoutAction, cancelPayoutAction } from "@/app/actions/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +77,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
                   <a href={`/api/payout-batch/single/${req.id}`} title="Download bank details" className="inline-flex items-center rounded-xl border border-line-input bg-white px-2.5 py-1.5 text-indigo-brand transition hover:bg-surface-lav"><Download size={14} /></a>
                   <form action={approvePayoutAction.bind(null, req.id)}><button type="submit" className="rounded-xl bg-brand-gradient px-3.5 py-1.5 text-[13px] font-bold text-white">Mark paid</button></form>
                   <form action={holdPayoutAction.bind(null, req.id)}><button type="submit" className="rounded-xl border border-line-input bg-white px-3.5 py-1.5 text-[13px] font-semibold text-indigo-brand transition hover:bg-surface-lav">Hold</button></form>
+                  <form action={cancelPayoutAction.bind(null, req.id)}><button type="submit" title="Cancel & refund to wallet" className="rounded-xl border border-[#f1c9c9] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-red-500 transition hover:bg-[#fdf2f2]">Cancel</button></form>
                 </div>
               </div>
             ))}
@@ -96,7 +97,10 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
                     <div className="text-[12.5px] text-muted">{bankLine(req.bankSnapshot)} · {req.reference}</div>
                   </div>
                   <div className="font-display text-[15px] font-extrabold tabular-nums text-orange-deep">{formatZar(req.amountCents)}</div>
-                  <form action={releasePayoutAction.bind(null, req.id)}><button type="submit" className="rounded-xl border border-line-input bg-white px-3.5 py-1.5 text-[13px] font-bold text-money transition hover:bg-[#eef6f0]">Release to queue</button></form>
+                  <div className="flex items-center gap-2">
+                    <form action={releasePayoutAction.bind(null, req.id)}><button type="submit" className="rounded-xl border border-line-input bg-white px-3.5 py-1.5 text-[13px] font-bold text-money transition hover:bg-[#eef6f0]">Release to queue</button></form>
+                    <form action={cancelPayoutAction.bind(null, req.id)}><button type="submit" title="Cancel & refund to wallet" className="rounded-xl border border-[#f1c9c9] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-red-500 transition hover:bg-[#fdf2f2]">Cancel &amp; refund</button></form>
+                  </div>
                 </div>
               ))}
             </div>

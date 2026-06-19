@@ -89,6 +89,7 @@ enum PayoutStatus {
   PROCESSING
   PAID
   HELD
+  CANCELLED
 }
 
 // ---------------------------------------------------------------------------
