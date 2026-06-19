@@ -59,13 +59,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role;
         token.name = user.name;
         token.email = user.email;
+        token.checkedAt = Date.now();
         return token;
       }
-      // On every subsequent request, re-validate identity against the DB so a
-      // role change, rejection, or account deletion takes effect immediately
-      // (not only when the token expires), and name/email stay fresh (e.g. the
-      // Pay page must send Payfast the current email after a profile edit).
-      if (token.id) {
+      // Re-validate identity against the DB so a role change, rejection, or
+      // account deletion takes effect (and name/email stay fresh). Throttled to
+      // at most once per 60s per session — without this it was one DB round-trip
+      // on EVERY request, the highest-frequency query in the app. A revoked
+      // admin therefore loses access within a minute rather than instantly.
+      const checkedAt = (token.checkedAt as number | undefined) ?? 0;
+      if (token.id && Date.now() - checkedAt > 60_000) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { role: true, fullName: true, email: true },
@@ -74,6 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = dbUser.role;
         token.name = dbUser.fullName;
         token.email = dbUser.email;
+        token.checkedAt = Date.now();
       }
       return token;
     },

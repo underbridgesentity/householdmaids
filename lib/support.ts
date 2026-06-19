@@ -6,12 +6,11 @@ import { prisma } from "@/lib/db";
  * "unread" = messages from the OTHER party after your last read.
  */
 
-/** Returns the user's thread, creating it on first use. */
+/** Returns the user's thread, creating it on first use. Upsert avoids the
+ *  check-then-create race on a double-submit (unique userId would otherwise throw). */
 export async function getOrCreateThread(userId: string): Promise<string> {
-  const existing = await prisma.supportThread.findUnique({ where: { userId }, select: { id: true } });
-  if (existing) return existing.id;
-  const created = await prisma.supportThread.create({ data: { userId }, select: { id: true } });
-  return created.id;
+  const t = await prisma.supportThread.upsert({ where: { userId }, create: { userId }, update: {}, select: { id: true } });
+  return t.id;
 }
 
 /** Posts a message into a user's thread (creating it if needed). */
@@ -35,14 +34,17 @@ export async function markThreadRead(threadId: string, side: "user" | "admin"): 
   });
 }
 
-/** Count of unread (customer/helper-sent) messages awaiting an admin reply, for the nav badge. */
+/** Count of unread (customer/helper-sent) messages awaiting an admin reply, for
+ *  the nav badge. A single indexed SQL count — runs on every admin page load, so
+ *  it must not load rows. */
 export async function adminUnreadCount(): Promise<number> {
-  const threads = await prisma.supportThread.findMany({ select: { adminReadAt: true, messages: { where: { fromAdmin: false }, select: { createdAt: true } } } });
-  let n = 0;
-  for (const t of threads) {
-    n += t.messages.filter((m) => !t.adminReadAt || m.createdAt > t.adminReadAt).length;
-  }
-  return n;
+  const rows = await prisma.$queryRaw<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count
+    FROM "SupportMessage" m
+    JOIN "SupportThread" t ON m."threadId" = t.id
+    WHERE m."fromAdmin" = false
+      AND (t."adminReadAt" IS NULL OR m."createdAt" > t."adminReadAt")`;
+  return Number(rows[0]?.count ?? 0);
 }
 
 /** Whether the user has unread admin replies (for the customer/helper nav dot). */

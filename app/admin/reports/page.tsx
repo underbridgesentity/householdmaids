@@ -17,7 +17,7 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
   const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
   const windowStart = new Date(startOfToday.getTime() - (windowDays - 1) * 86400000);
 
-  const [paidInWindow, newCustomers, walletBefore, walletInWindow, helperAgg, topHelpers, refStats] = await Promise.all([
+  const [paidInWindow, newCustomers, walletBefore, walletInWindow, helperAgg, refStats] = await Promise.all([
     prisma.booking.findMany({
       where: { paymentStatus: { in: ["PAID", "REFUNDED"] }, status: { not: "CANCELLED" }, createdAt: { gte: windowStart } },
       select: { createdAt: true, totalCents: true, paymentStatus: true, payment: { select: { providerRef: true } } },
@@ -26,7 +26,6 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
     prisma.walletTransaction.aggregate({ _sum: { amountCents: true }, where: { status: { in: ["EARNED", "PAID"] }, createdAt: { lt: windowStart } } }),
     prisma.walletTransaction.findMany({ where: { status: { in: ["EARNED", "PAID"] }, createdAt: { gte: windowStart } }, select: { createdAt: true, amountCents: true } }),
     prisma.booking.groupBy({ by: ["helperId"], where: { paymentStatus: "PAID", status: { not: "CANCELLED" }, helperId: { not: null } }, _sum: { totalCents: true }, _count: true }),
-    prisma.helperProfile.findMany({ where: { status: "APPROVED" }, include: { user: { select: { fullName: true } } }, orderBy: { completedJobs: "desc" }, take: 8 }),
     prisma.referral.findMany({ select: { status: true, rewardCents: true } }),
   ]);
 
@@ -59,11 +58,17 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
     liabilitySeries.push({ label: showLabel ? from.toLocaleDateString("en-ZA", { day: "numeric", month: "short" }) : "", value: Math.round(running / 100) });
   }
 
-  // Top cleaners by revenue.
-  const revByHelper = new Map(helperAgg.map((h) => [h.helperId, { rev: h._sum.totalCents ?? 0, jobs: h._count }]));
-  const cleaners = topHelpers
-    .map((h) => ({ name: h.user.fullName, rating: h.rating, completed: h.completedJobs, rev: revByHelper.get(h.id)?.rev ?? 0 }))
-    .sort((a, b) => b.rev - a.rev);
+  // Top cleaners BY REVENUE — rank the revenue aggregate itself (not a jobs-ranked
+  // subset), then fetch names for just the top 8, so the real top earner is never
+  // omitted.
+  const topByRev = [...helperAgg].sort((a, b) => (b._sum.totalCents ?? 0) - (a._sum.totalCents ?? 0)).slice(0, 8);
+  const topIds = topByRev.map((h) => h.helperId).filter((x): x is string => !!x);
+  const helperRows = topIds.length ? await prisma.helperProfile.findMany({ where: { id: { in: topIds } }, include: { user: { select: { fullName: true } } } }) : [];
+  const infoById = new Map(helperRows.map((h) => [h.id, { name: h.user.fullName, rating: h.rating, completed: h.completedJobs }]));
+  const cleaners = topByRev.map((h) => {
+    const info = infoById.get(h.helperId!);
+    return { name: info?.name ?? "—", rating: info?.rating ?? 0, completed: info?.completed ?? 0, rev: h._sum.totalCents ?? 0 };
+  });
 
   const refEarned = refStats.filter((r) => r.status === "EARNED" || r.status === "PAID");
   const refRewardCents = refEarned.reduce((t, r) => t + r.rewardCents, 0);

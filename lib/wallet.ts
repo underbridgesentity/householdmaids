@@ -18,16 +18,18 @@ export interface WalletSummary {
 }
 
 export async function getWallet(userId: string): Promise<WalletSummary> {
-  const txns = await prisma.walletTransaction.findMany({ where: { userId } });
-  let available = 0;
-  let pending = 0;
-  let allTime = 0;
-  for (const t of txns) {
-    if (t.status === "EARNED" || t.status === "PAID") available += t.amountCents;
-    if (t.status === "PENDING" && t.amountCents > 0) pending += t.amountCents;
-    if (t.amountCents > 0 && t.status !== "REVERSED") allTime += t.amountCents;
-  }
-  return { availableCents: available, pendingCents: pending, allTimeEarnedCents: allTime };
+  // SQL aggregates (indexed on userId) instead of loading the whole ledger —
+  // keeps this fast as a customer accumulates thousands of transactions.
+  const [avail, pend, all] = await Promise.all([
+    prisma.walletTransaction.aggregate({ _sum: { amountCents: true }, where: { userId, status: { in: ["EARNED", "PAID"] } } }),
+    prisma.walletTransaction.aggregate({ _sum: { amountCents: true }, where: { userId, status: "PENDING", amountCents: { gt: 0 } } }),
+    prisma.walletTransaction.aggregate({ _sum: { amountCents: true }, where: { userId, amountCents: { gt: 0 }, status: { not: "REVERSED" } } }),
+  ]);
+  return {
+    availableCents: avail._sum.amountCents ?? 0,
+    pendingCents: pend._sum.amountCents ?? 0,
+    allTimeEarnedCents: all._sum.amountCents ?? 0,
+  };
 }
 
 /** Appends a ledger entry inside an existing transaction, stamping balanceAfter. */
@@ -41,11 +43,8 @@ export async function appendLedger(
     ref?: string;
   },
 ): Promise<void> {
-  const prior = await tx.walletTransaction.findMany({ where: { userId: params.userId } });
-  const available = prior.reduce(
-    (sum, t) => (t.status === "EARNED" || t.status === "PAID" ? sum + t.amountCents : sum),
-    0,
-  );
+  const agg = await tx.walletTransaction.aggregate({ _sum: { amountCents: true }, where: { userId: params.userId, status: { in: ["EARNED", "PAID"] } } });
+  const available = agg._sum.amountCents ?? 0;
   const counts = params.status === "EARNED" || params.status === "PAID";
   const balanceAfter = counts ? available + params.amountCents : available;
   await tx.walletTransaction.create({

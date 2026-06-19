@@ -200,21 +200,30 @@ export async function cancelBookingAction(reference: string): Promise<void> {
     throw new Error("Your cleaner is already on the way. Please contact support to cancel.");
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.booking.update({ where: { id: booking.id }, data: { status: "CANCELLED" } });
-    // Refund a paid booking's full amount to the wallet (store credit, not cash).
-    if (isPaid) {
+  // Lock the booking row and RE-READ inside the transaction so concurrent
+  // cancel requests (a replayed/double-clicked POST) serialize here — otherwise
+  // each would read paymentStatus=PAID and append a duplicate refund credit,
+  // which is directly cashable via withdrawal. Marking REFUNDED makes any later
+  // cancel (customer or admin) a no-op.
+  const refunded = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Booking" WHERE reference = ${reference} FOR UPDATE`;
+    const b = await tx.booking.findUnique({ where: { reference }, select: { id: true, status: true, paymentStatus: true, totalCents: true } });
+    if (!b || b.status === "CANCELLED" || b.paymentStatus === "REFUNDED") return false;
+    const doRefund = b.paymentStatus === "PAID";
+    await tx.booking.update({ where: { id: b.id }, data: { status: "CANCELLED", ...(doRefund ? { paymentStatus: "REFUNDED" } : {}) } });
+    if (doRefund) {
       await appendLedger(tx, {
         userId: user.id,
         type: "ADJUSTMENT",
-        amountCents: booking.totalCents,
+        amountCents: b.totalCents,
         status: "EARNED",
-        ref: `Refund · cancelled booking ${booking.reference}`,
+        ref: `Refund · cancelled booking ${reference}`,
       });
     }
+    return doRefund;
   });
-  await audit({ actorId: user.id, action: "booking.cancelled", entity: "Booking", entityId: reference, meta: { refundedCents: isPaid ? booking.totalCents : 0 } });
-  if (isPaid && user.email) {
+  await audit({ actorId: user.id, action: "booking.cancelled", entity: "Booking", entityId: reference, meta: { refundedCents: refunded ? booking.totalCents : 0 } });
+  if (refunded && user.email) {
     try {
       await sendRefundEmail({ to: user.email, fullName: user.name ?? "there", reference: booking.reference, amountCents: booking.totalCents });
       await logCustomerEmail(user.id, `Refunded to your wallet · ${booking.reference}`, `Booking cancelled — R${Math.round(booking.totalCents / 100)} refunded to your wallet.`, "refund");

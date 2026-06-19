@@ -178,6 +178,8 @@ model Address {
   areaId    String?
   area      Area?   @relation(fields: [areaId], references: [id])
   isDefault Boolean @default(false)
+
+  @@index([userId])
 }
 
 model Area {
@@ -247,6 +249,13 @@ model Booking {
   review       Review?
   conversation Conversation?
   referral     Referral?
+
+  @@index([customerId, scheduledAt])
+  @@index([helperId])
+  @@index([status])
+  @@index([paymentStatus, status])
+  @@index([createdAt])
+  @@index([scheduledAt])
 }
 
 model BookingAddon {
@@ -283,6 +292,8 @@ model HelperProfile {
   bookings  Booking[]
   reviews   Review[]          @relation("HelperReviews")
   references HelperReference[]
+
+  @@index([status])
 }
 
 /// A contactable reference supplied by a helper applicant during vetting.
@@ -294,6 +305,8 @@ model HelperReference {
   relationship String?
   phone        String
   createdAt    DateTime      @default(now())
+
+  @@index([helperId])
 }
 
 model HelperDocument {
@@ -304,6 +317,8 @@ model HelperDocument {
   storageKey String
   verified   Boolean       @default(false)
   createdAt  DateTime      @default(now())
+
+  @@index([helperId])
 }
 
 model Review {
@@ -318,6 +333,9 @@ model Review {
   note       String?
   tags       String[]
   createdAt  DateTime      @default(now())
+
+  @@index([helperId])
+  @@index([customerId])
 }
 
 model Conversation {
@@ -337,6 +355,8 @@ model Message {
   body           String
   createdAt      DateTime     @default(now())
   readAt         DateTime?
+
+  @@index([conversationId, createdAt])
 }
 
 model ReferralCode {
@@ -361,6 +381,9 @@ model Referral {
   status     ReferralStatus @default(PENDING)
   createdAt  DateTime       @default(now())
   earnedAt   DateTime?
+
+  @@index([referrerId])
+  @@index([status])
 }
 
 model WalletTransaction {
@@ -373,6 +396,10 @@ model WalletTransaction {
   balanceAfter Int
   ref          String?
   createdAt    DateTime        @default(now())
+
+  @@index([userId])
+  @@index([type, status])
+  @@index([status, createdAt])
 }
 
 model PayoutCycle {
@@ -398,6 +425,10 @@ model PayoutRequest {
   requestedAt DateTime     @default(now())
   paidAt      DateTime?
   proofKey    String? // encrypted storage key for this payout's proof-of-payment
+
+  @@index([status])
+  @@index([userId])
+  @@index([cycleId])
 }
 
 model PaymentTransaction {
@@ -435,6 +466,8 @@ model Notification {
   body      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([userId, read])
 }
 
 /// A spec-based quote request (e.g. commercial window cleaning). Captured from
