@@ -124,7 +124,11 @@ export async function createBookingAction(formData: FormData): Promise<BookingSt
     prisma.addon.findMany({ where: { id: { in: input.addonIds }, active: true } }),
     prisma.area.findUnique({ where: { id: input.areaId } }),
     getSettings(),
-    prisma.booking.count({ where: { customerId } }),
+    // "First booking" for referral eligibility ignores CANCELLED bookings, so an
+    // abandoned-then-cancelled first attempt doesn't burn the discount on a
+    // rebook. An active (still-pending) booking DOES count, which prevents
+    // stacking the discount across multiple unpaid bookings.
+    prisma.booking.count({ where: { customerId, status: { not: "CANCELLED" } } }),
     prisma.referral.findUnique({ where: { refereeId: customerId } }),
   ]);
   if (!service || !service.active) return { error: "That service is no longer available." };
